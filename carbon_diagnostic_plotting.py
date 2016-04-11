@@ -15,7 +15,6 @@ import pdb
 import respiration_photosynthesis_run as rp_run
 import DataIO as io
 import datetime_functions as dtf
-import dark_T_response_functions as dark
 import solar_functions as sf
 
 reload (dtf)
@@ -56,7 +55,7 @@ def plot_CO2_diurnal():
     total_weight = 0
     for i, var in enumerate(vars_list[:len(new_list)]):
         prev_var = False if i == 0 else var        
-        prev_val = 0 if i == 0 else val
+        prev_val = 0 if i == 0 else var
         new_var = new_list[i]
         a = new_var.split('_')[-1]
         try:
@@ -162,9 +161,18 @@ def plot_NEE_diurnal():
     
     reload(rp_run)    
     
-    f = '/home/imchugh/Code/Python/Config_files/master_configs.txt'
+    f = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
     var_list = ['Fc', 'Fc_u*', 'Fc_Sc', 'Fc_Sc_u*']
-    ustar_list = [0, 0.42, 0, 0.36]
+    ustar_list = [0, 
+                  {2011: 0.40,
+                   2012: 0.39,
+                   2013: 0.40,
+                   2014: 0.42}, 
+                  0, 
+                  {2011: 0.31,
+                   2012: 0.30,
+                   2013: 0.32,
+                   2014: 0.32}]
     stor_list = [False, False, True, True]
 
     # Get the uncorrected data and gap-fill Fc
@@ -253,7 +261,7 @@ def plot_RUE_dependence_on_Sc():
         
     df = io.OzFluxQCnc_to_data_structure(file_in, 
                                          var_list = ['ustar','Ta', 'Fc',
-                                                     'Fc_storage', 'Flu',
+                                                     'Fc_storage_obs', 'Flu',
                                                      'Fsd'], 
                                          output_structure='pandas')
 
@@ -278,11 +286,11 @@ def plot_RUE_dependence_on_Sc():
     ax2.set_ylabel('$S_c\//\/F_c$', fontsize = 22)
     series_list = []
     series_1 = ax1.plot(diurnal_df.index, (diurnal_df.Fc + 
-                                           diurnal_df.Fc_storage) / diurnal_df.Fsd, 
+                                           diurnal_df.Fc_storage_obs) / diurnal_df.Fsd, 
                         color = '0.5', label = '$S_c$')
     series_2 = ax1.plot(diurnal_df.index, diurnal_df.Fc / diurnal_df.Fsd, 
                         color = 'black', label = '$F_c\/+\/S_c$')
-    series_3 = ax2.plot(diurnal_df.index, diurnal_df.Fc_storage / diurnal_df.Fc, 
+    series_3 = ax2.plot(diurnal_df.index, diurnal_df.Fc_storage_obs / diurnal_df.Fc, 
                         color = 'black', label = '$S_c\//\/F_c$', linestyle = ':')
     series_list = series_1 + series_2 + series_3                        
     labs = [ser.get_label() for ser in series_list]
@@ -307,9 +315,9 @@ def plot_Sc_Ac_contributions():
     num_cats = 50   
     
     # Make variable lists
-    storage_vars = ['Fc_storage', 'Fc_storage_1', 'Fc_storage_2', 
-                    'Fc_storage_3', 'Fc_storage_4', 'Fc_storage_5', 
-                    'Fc_storage_6']
+    storage_vars = ['Fc_storage_obs', 'Fc_storage_obs_1', 'Fc_storage_obs_2', 
+                    'Fc_storage_obs_3', 'Fc_storage_obs_4', 'Fc_storage_obs_5', 
+                    'Fc_storage_obs_6']
     anc_vars = ['ustar', 'ustar_QCFlag', 'Fsd', 'Fsd_QCFlag', 'Ta', 'Ta_QCFlag',
                 'Fc', 'Fc_QCFlag']
 
@@ -329,22 +337,22 @@ def plot_Sc_Ac_contributions():
 
     # Categorise data
     sub_df['ustar_cat'] = pd.qcut(sub_df.ustar, num_cats, labels = np.linspace(1, num_cats, num_cats))
-    new_df = sub_df[['ustar', 'Fc_storage', 'Fc_storage_1', 'Fc_storage_2', 
-                     'Fc_storage_3', 'Fc_storage_4', 'Fc_storage_5', 
-                     'Fc_storage_6', 'ustar_cat', 'Ta', 'Fc', 'Fre_lt']].groupby('ustar_cat').mean()
-    new_df['Fc_storage_std'] = sub_df[['Fc_storage','ustar_cat']].groupby('ustar_cat').std()
+    new_df = sub_df[['ustar', 'Fc_storage_obs', 'Fc_storage_obs_1', 'Fc_storage_obs_2', 
+                     'Fc_storage_obs_3', 'Fc_storage_obs_4', 'Fc_storage_obs_5', 
+                     'Fc_storage_obs_6', 'ustar_cat', 'Ta', 'Fc', 'Fre_lt']].groupby('ustar_cat').mean()
+    new_df['Fc_storage_obs_std'] = sub_df[['Fc_storage_obs','ustar_cat']].groupby('ustar_cat').std()
 
     Sc_Ac_area = (new_df.Fre_lt[new_df.ustar<0.42].mean() - 
                   new_df.Fc[new_df.ustar<0.42].mean())
                   
-    Sc_propn_total = new_df.Fc_storage[new_df.ustar<0.42].mean() / Sc_Ac_area
+    Sc_propn_total = new_df.Fc_storage_obs[new_df.ustar<0.42].mean() / Sc_Ac_area
     Ac_propn_total = 1 - Sc_propn_total
 
     # Create plot
     fig = plt.figure(figsize = (8, 8))
     fig.patch.set_facecolor('white')
     ax1 = plt.gca()
-    ax1.plot(new_df.ustar, new_df.Fc_storage + new_df.Fc, linestyle = ':', 
+    ax1.plot(new_df.ustar, new_df.Fc_storage_obs + new_df.Fc, linestyle = ':', 
              label = '$S_{c}$', color = 'black')
     ax1.plot(new_df.ustar, new_df.Fc, linestyle = '-', 
              label = '$F_{c}$', color = 'black')
@@ -353,10 +361,10 @@ def plot_Sc_Ac_contributions():
 
     x = new_df.ustar
     y1 = new_df.Fc
-    y2 = new_df.Fc_storage + new_df.Fc
+    y2 = new_df.Fc_storage_obs + new_df.Fc
     ax1.fill_between(x, y1, y2, where=y2>=y1, facecolor='0.8', edgecolor='None',
                      interpolate=True)
-    y1 = new_df.Fc_storage + new_df.Fc
+    y1 = new_df.Fc_storage_obs + new_df.Fc
     y2 = new_df.Fre_lt
     ax1.fill_between(x, y1, y2, where=y2>=y1, facecolor='0.6', edgecolor='None',
                  interpolate=True)
@@ -396,17 +404,17 @@ def plot_Sc_all_levels_funct_ustar(correct_storage = False):
     0.2-0m s-1;
     """
     
-    num_cats = 50   
+    num_cats = 30   
 
     # Make variable lists
-    storage_vars = ['Fc_storage', 'Fc_storage_1', 'Fc_storage_2', 
-                    'Fc_storage_3', 'Fc_storage_4', 'Fc_storage_5', 
-                    'Fc_storage_6',]
+    storage_vars = ['Fc_storage_obs', 'Fc_storage_obs_1', 'Fc_storage_obs_2', 
+                    'Fc_storage_obs_3', 'Fc_storage_obs_4', 'Fc_storage_obs_5', 
+                    'Fc_storage_obs_6',]
     anc_vars = ['ustar', 'ustar_QCFlag', 'Fsd', 'Ta', 'Fc', 'Fre_lt']    
     var_names = ['0-36m', '0-0.5m', '0.5-2m', '2-4m', '4-8m', '8-16m', '16-36m'] 
     
     # Get data
-    df, attr = get_data(storage_vars + anc_vars)
+    df = get_data(storage_vars + anc_vars)
     test_dict = rp_run.main()[0]
     df['Fre_lt'] = test_dict['Re']    
     
@@ -426,16 +434,16 @@ def plot_Sc_all_levels_funct_ustar(correct_storage = False):
     means_df = sub_df.groupby('ustar_cat').mean()
 
     # Calculate uncertainty
-    error_df = (sub_df[['Fc_storage', 'Re_take_Fc', 'ustar_cat']]
+    error_df = (sub_df[['Fc_storage_obs', 'Re_take_Fc', 'ustar_cat']]
                 .groupby('ustar_cat').std() / 
-                np.sqrt(sub_df[['Fc_storage', 'Re_take_Fc', 'ustar_cat']]
+                np.sqrt(sub_df[['Fc_storage_obs', 'Re_take_Fc', 'ustar_cat']]
                         .groupby('ustar_cat').count())) * 2
 
     # Generate regression statistics and apply to low u* data for low levels 
     if correct_storage:
         stats_df = pd.DataFrame(columns=storage_vars[1:5], index = ['a', 'b'])
         for var in stats_df.columns:
-            coeffs = np.polyfit(means_df['Fc_storage_5'][(means_df.ustar < 0.4) & 
+            coeffs = np.polyfit(means_df['Fc_storage_obs_5'][(means_df.ustar < 0.4) & 
                                                          (means_df.ustar > 0.2)],
                                 means_df[var][(means_df.ustar < 0.4) & 
                                               (means_df.ustar > 0.2)],
@@ -445,18 +453,18 @@ def plot_Sc_all_levels_funct_ustar(correct_storage = False):
     
         corr_df = means_df.copy()
         for var in stats_df.columns:
-            corr_df[var][corr_df['ustar'] < 0.2] = (corr_df['Fc_storage_5']
+            corr_df[var][corr_df['ustar'] < 0.2] = (corr_df['Fc_storage_obs_5']
                                                     [corr_df['ustar'] < 0.2] * 
                                                     stats_df.loc['a', var] + 
                                                     stats_df.loc['b', var])
-        corr_df['Fc_storage'] = corr_df[storage_vars[1:]].sum(axis = 1)
-        error_df['Fc_storage_corrected'] = error_df['Fc_storage']
-        error_df['Fc_storage_corrected'][corr_df['ustar'] < 0.2] = (
-            error_df['Fc_storage'] * 
+        corr_df['Fc_storage_obs'] = corr_df[storage_vars[1:]].sum(axis = 1)
+        error_df['Fc_storage_obs_corrected'] = error_df['Fc_storage_obs']
+        error_df['Fc_storage_obs_corrected'][corr_df['ustar'] < 0.2] = (
+            error_df['Fc_storage_obs'] * 
             corr_df[storage_vars[0]][corr_df['ustar'] < 0.2] /
             means_df[storage_vars[0]][means_df['ustar'] < 0.2])
         corr_df = corr_df[corr_df.ustar < 0.25]
-        means_df['Fc_storage_corrected'] = pd.concat(
+        means_df['Fc_storage_obs_corrected'] = pd.concat(
             [corr_df[storage_vars[0]][means_df.ustar < 0.25],
              means_df[storage_vars[0]][means_df.ustar > 0.25]])
     
@@ -465,7 +473,7 @@ def plot_Sc_all_levels_funct_ustar(correct_storage = False):
     fig.patch.set_facecolor('white')
     ax1 = plt.gca()
     colour_idx = np.linspace(0, 1, 6)
-    vars_dict = {'Fc_storage_corrected': 'blue', 'Re_take_Fc': 'grey'}
+    vars_dict = {'Fc_storage_obs_corrected': 'blue', 'Re_take_Fc': 'grey'}
     for i, var in enumerate(storage_vars[1:]):
         ax1.plot(means_df.ustar, means_df[var], color = plt.cm.cool(colour_idx[i]), 
                  label = var_names[i + 1])
@@ -521,10 +529,10 @@ def plot_Sc_dependence_time_after_sunset():
                                               var_list = ['Fc', 'ustar', 'Fsd', 
                                                           'Ta', 'ps'],
                                               QC_accept_codes=[0])
-    data_d2 = io.OzFluxQCnc_to_data_structure(file_in, var_list = ['Fc_storage'])
+    data_d2 = io.OzFluxQCnc_to_data_structure(file_in, var_list = ['Fc_storage_obs'])
     
     df = pd.DataFrame(data_d1)
-    df['Fc_storage'] = data_d2['Fc_storage']
+    df['Fc_storage_obs'] = data_d2['Fc_storage_obs']
     df['time_since_sunset'] = 0
     
     sunrise_d = sf.get_ephem_solar(data_d1, '-36.673215', '145.029247', 150, 10, 'rise')
@@ -548,11 +556,11 @@ def plot_Sc_dependence_time_after_sunset():
     lo_count_df = lo_ustar_df.groupby('time_since_sunset').count()
     
     final_df = pd.DataFrame({'count': hi_means_df.index[1:-1],
-                             'hi_Sc_mean': hi_means_df.Fc_storage[1:-1], 
-                             'hi_Sc_count': hi_count_df.Fc_storage[1:-1],
+                             'hi_Sc_mean': hi_means_df.Fc_storage_obs[1:-1], 
+                             'hi_Sc_count': hi_count_df.Fc_storage_obs[1:-1],
                              'hi_Ta_mean': hi_means_df.Ta[1:-1],
-                             'lo_Sc_mean': lo_means_df.Fc_storage[1:-1], 
-                             'lo_Sc_count': lo_count_df.Fc_storage[1:-1]})
+                             'lo_Sc_mean': lo_means_df.Fc_storage_obs[1:-1], 
+                             'lo_Sc_count': lo_count_df.Fc_storage_obs[1:-1]})
     
     fig = plt.figure(figsize = (12, 9))
     fig.patch.set_facecolor('white')
@@ -611,7 +619,7 @@ def plot_Sc_Fc_Ac_funct_ustar():
     num_cats = 50   
 
     # Make variable lists
-    use_vars = ['Fc_storage', 'Fc', 'ustar', 'ustar_QCFlag', 
+    use_vars = ['Fc_storage_obs', 'Fc', 'ustar', 'ustar_QCFlag', 
                 'Fsd', 'Ta', 'Fc_QCFlag', 'Sws']
     
     # Get data
@@ -628,14 +636,14 @@ def plot_Sc_Fc_Ac_funct_ustar():
     sub_df.dropna(inplace = True)    
 
     # Generate advection estimate
-    sub_df['advection'] = sub_df['Fre_lt'] - sub_df['Fc'] - sub_df['Fc_storage']
+    sub_df['advection'] = sub_df['Fre_lt'] - sub_df['Fc'] - sub_df['Fc_storage_obs']
 
     # Categorise data into ustar bins then do means and Sds grouped by categories
     sub_df['ustar_cat'] = pd.qcut(sub_df.ustar, num_cats, labels = np.linspace(1, num_cats, num_cats))
     means_df = sub_df.groupby('ustar_cat').mean()
-    CI_df = (sub_df[['Fc','Fc_storage','Fre_lt','advection', 'ustar_cat']]
+    CI_df = (sub_df[['Fc','Fc_storage_obs','Fre_lt','advection', 'ustar_cat']]
              .groupby('ustar_cat').std() / 
-             np.sqrt(sub_df[['Fc','Fc_storage','Fre_lt','advection', 'ustar_cat']]
+             np.sqrt(sub_df[['Fc','Fc_storage_obs','Fre_lt','advection', 'ustar_cat']]
              .groupby('ustar_cat').count()) * 2)
     
     # Create plot
@@ -646,7 +654,7 @@ def plot_Sc_Fc_Ac_funct_ustar():
              label = '$\hat{ER}$', color = 'black')
     ax1.plot(means_df.ustar, means_df.Fc, linestyle = '-', 
              label = '$F_{c}$', color = 'black')
-    ax1.plot(means_df.ustar, means_df.Fc_storage, linestyle = ':', 
+    ax1.plot(means_df.ustar, means_df.Fc_storage_obs, linestyle = ':', 
              label = '$S_{c}$', color = 'black')                     
     ax1.plot(means_df.ustar, means_df.advection, 
              linestyle = '-', label = '$Av_{c}\/+\/Ah_{c}$', color = 'grey')
@@ -685,8 +693,8 @@ def plot_Sc_Fc_funct_ustar(correct_storage = False):
     num_cats = 30   
     
     # Make variable lists
-    use_vars = ['Fc_storage', 'Fc_storage_1', 'Fc_storage_2', 'Fc_storage_3', 
-                'Fc_storage_4', 'Fc_storage_5', 'Fc_storage_6', 
+    use_vars = ['Fc_storage_obs', 'Fc_storage_obs_1', 'Fc_storage_obs_2', 'Fc_storage_obs_3', 
+                'Fc_storage_obs_4', 'Fc_storage_obs_5', 'Fc_storage_obs_6', 
                 'Fc', 'Fc_QCFlag', 'ustar', 'ustar_QCFlag', 'Fsd', 'Ta', 'Sws']
 
     # Get data
@@ -709,17 +717,17 @@ def plot_Sc_Fc_funct_ustar(correct_storage = False):
     if correct_storage:                 
         stats_df = pd.DataFrame(columns=use_vars[1:5], index = ['a', 'b'])
         for var in stats_df.columns:
-            coeffs = np.polyfit(new_df['Fc_storage_5'][(new_df.ustar < 0.4) & (new_df.ustar > 0.2)],
+            coeffs = np.polyfit(new_df['Fc_storage_obs_5'][(new_df.ustar < 0.4) & (new_df.ustar > 0.2)],
                                 new_df[var][(new_df.ustar < 0.4) & (new_df.ustar > 0.2)],
                                 1)
             stats_df.loc['a', var] = coeffs[0]
             stats_df.loc['b', var] = coeffs[1]
                          
         for var in stats_df.columns:
-            new_df[var][new_df['ustar'] < 0.2] = (new_df['Fc_storage_5'][new_df['ustar'] < 0.2] * 
+            new_df[var][new_df['ustar'] < 0.2] = (new_df['Fc_storage_obs_5'][new_df['ustar'] < 0.2] * 
                                                   stats_df.loc['a', var] + stats_df.loc['b', var])
         
-        new_df['Fc_storage'] = new_df[use_vars[1:7]].sum(axis = 1)
+        new_df['Fc_storage_obs'] = new_df[use_vars[1:7]].sum(axis = 1)
     
     # Create plot
     fig = plt.figure(figsize = (12, 8))
@@ -728,10 +736,10 @@ def plot_Sc_Fc_funct_ustar(correct_storage = False):
     ax2 = ax1.twinx()
     ser_1 = ax1.plot(new_df.ustar, new_df.Fc, 's', label = '$F_{c}$',
                      markersize = 10, color = 'grey')
-    ser_2 = ax1.plot(new_df.ustar, new_df.Fc_storage, 'o', label = '$S_{c}$', 
+    ser_2 = ax1.plot(new_df.ustar, new_df.Fc_storage_obs, 'o', label = '$S_{c}$', 
                      markersize = 10, markeredgecolor = 'black', 
                      markerfacecolor = 'none', mew = 1)
-    ser_3 = ax1.plot(new_df.ustar, new_df.Fc + new_df.Fc_storage, '^', 
+    ser_3 = ax1.plot(new_df.ustar, new_df.Fc + new_df.Fc_storage_obs, '^', 
                      label = '$F_{c}\/+\/S_{c}$',
                      markersize = 10, color = 'black')
     ser_4 = ax2.plot(new_df.ustar, new_df.Ta, color = 'black', linestyle = ':',
@@ -771,24 +779,24 @@ def plot_Sc_diurnal_with_ustar():
     
     file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6_stor.nc'
     
-    storage_vars = ['Fc_storage', 'Fc_storage_1', 'Fc_storage_2', 
-                    'Fc_storage_3', 'Fc_storage_4', 'Fc_storage_5', 
-                    'Fc_storage_6',]    
+    storage_vars = ['Fc_storage_obs', 'Fc_storage_obs_1', 'Fc_storage_obs_2', 
+                    'Fc_storage_obs_3', 'Fc_storage_obs_4', 'Fc_storage_obs_5', 
+                    'Fc_storage_obs_6',]    
     
     df = io.OzFluxQCnc_to_data_structure(file_in, 
                                          var_list = (storage_vars + 
                                                      ['ustar','Ta', 'Fc',
-                                                     'Fc_storage', 'Flu',
+                                                     'Fc_storage_obs', 'Flu',
                                                      'Fsd']), 
                                          output_structure='pandas')
 
     diurnal_df = df.groupby([lambda x: x.hour, lambda y: y.minute]).mean()
-    diurnal_df['Fc_storage_std'] = df['Fc_storage'].groupby([lambda x: x.hour, 
+    diurnal_df['Fc_storage_obs_std'] = df['Fc_storage_obs'].groupby([lambda x: x.hour, 
                                                              lambda y: y.minute]).std()
     diurnal_df.index = np.linspace(0, 23.5, 48)
     day_ind = diurnal_df[diurnal_df.Fsd > 5].index
 
-    storage_mean = diurnal_df.Fc_storage.mean()
+    storage_mean = diurnal_df.Fc_storage_obs.mean()
     var_names = ['0-36m', '0-0.5m', '0.5-2m', '2-4m', '4-8m', '8-16m', '16-36m']
     
     # Create plot
@@ -810,7 +818,7 @@ def plot_Sc_diurnal_with_ustar():
         series_list.append(ax1.plot(diurnal_df.index, diurnal_df[var], 
                                     color = plt.cm.cool(colour_idx[i]), 
                                     label = var_names[i + 1]))
-    series_list.append(ax1.plot(diurnal_df.index, diurnal_df.Fc_storage, 
+    series_list.append(ax1.plot(diurnal_df.index, diurnal_df.Fc_storage_obs, 
                                 color = '0.5', label = var_names[0]))
     series_list.append(ax2.plot(diurnal_df.index, diurnal_df.ustar, 
                                 color = 'black', label = '$u_*$'))
@@ -892,7 +900,7 @@ def plot_T_resp():
     
     # Make variable lists
     use_vars = ['Fc', 'Fc_QCFlag', 'ustar', 'ustar_QCFlag', 
-                'Fsd', 'Fc_storage', 'Ta']
+                'Fsd', 'Fc_storage_obs', 'Ta']
 
     # Get data
     df = get_data(use_vars)    
@@ -906,7 +914,7 @@ def plot_T_resp():
     df.dropna(inplace = True)
 
     # Get T response function
-    params = dark.optimise_all({'NEE_series': df.Fc + df.Fc_storage,
+    params = dark.optimise_all({'NEE_series': df.Fc + df.Fc_storage_obs,
                                 'TempC': df.Ta},
                                 {'Eo_prior': 200,
                                  'rb_prior': 2})
@@ -953,7 +961,7 @@ def plot_T_resp_all():
     
     # Make variable lists
     use_vars = ['Fc', 'Fc_QCFlag', 'ustar', 'ustar_QCFlag', 
-                'Fsd', 'Fc_storage', 'Ta']
+                'Fsd', 'Fc_storage_obs', 'Ta']
 
     # Get data
     df = get_data(use_vars)    
@@ -973,7 +981,7 @@ def plot_T_resp_all():
                                        'rb_prior': 2})
 
     # Get T response function with profile measurements
-    params_stor = dark.optimise_all({'NEE_series': df.Fc + df.Fc_storage,
+    params_stor = dark.optimise_all({'NEE_series': df.Fc + df.Fc_storage_obs,
                                      'TempC': df.Ta},
                                     {'Eo_prior': 200,
                                      'rb_prior': 2}) 
@@ -1015,15 +1023,15 @@ def plot_T_resp_all():
 #                fmt = 'o', color = 'black', marker = 'o', markeredgecolor = 'black', 
 #                markerfacecolor = 'white', markersize = 7, markeredgewidth = 1)
     ax.plot(mean_df.Ta, mean_df.Fc, color = 'red')
-    ax.plot(mean_df.Ta, mean_df.Fc + mean_df.Fc_storage, color = 'green')
-    ax.plot(mean_df.Ta, mean_df.Fc_storage, color = 'black')
+    ax.plot(mean_df.Ta, mean_df.Fc + mean_df.Fc_storage_obs, color = 'green')
+    ax.plot(mean_df.Ta, mean_df.Fc_storage_obs, color = 'black')
          
     plt.show()
     
 #def storage_and_T_by_wind_sector():
 #
 #    # Assign storage and met variables
-#    stor_var = 'Fc_storage_6'
+#    stor_var = 'Fc_storage_obs_6'
 #    T_var = 'Ta_HMP_32m'
 #    ws_var = 'Ws_RMY_32m'
 #    wd_var = 'Wd_RMY_32m'
