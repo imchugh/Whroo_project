@@ -774,7 +774,8 @@ def plot_Sc_Fc_Ac_funct_ustar():
     yhi = means_df.advection + CI_df.advection
     ax1.fill_between(x, ylo, yhi, where=yhi>=ylo, facecolor='0.8', 
                      edgecolor='None', interpolate=True)
-    ax1.axvline(x = 0.42, color  = 'black', linestyle = '-.')
+    ax1.axvline(x = 0.42, color  = 'grey')
+    ax1.axvline(x = 0.32, color  = 'grey')
     ax1.axhline(y = 0, color  = 'black', linestyle = '-')
     ax1.set_ylabel(r'$C\/flux\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 22)
     ax1.set_xlabel('$u_{*}\/(m\/s^{-1})$', fontsize = 22)
@@ -857,7 +858,8 @@ def plot_Sc_Fc_funct_ustar(correct_storage = False):
                      label = '$T_{a}$')
     ser_5 = ax2.plot(new_df.ustar, new_df.Sws * 100, color = 'black', 
                      linestyle = '-.', label = '$VWC$')                     
-    ax1.axvline(x = 0.42, color  = 'black', linestyle = '--')
+    ax1.axvline(x = 0.42, color = 'grey')
+    ax1.axvline(x = 0.32, color = 'grey')
     ax1.axhline(y = 0, color  = 'black', linestyle = '-')
     ax1.set_ylabel(r'$C\/flux\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 22)
     ax2.set_ylabel('$T_{a}\/(^{o}C)\//\/VWC\/(m^{3}m^{-3}\/$'+'x'+'$\/10^{2})$', 
@@ -868,6 +870,20 @@ def plot_Sc_Fc_funct_ustar(correct_storage = False):
     ax1.tick_params(axis = 'y', labelsize = 14)
     ax2.tick_params(axis = 'y', labelsize = 14)
     ax1.xaxis.set_ticks_position('bottom')
+    ax1.annotate('$u_{*th}\/(F_c)$', 
+                 xy = (0.42, 1), 
+                 xytext = (0.6, 
+                           1),
+                 textcoords='data', verticalalignment='center',
+                 horizontalalignment = 'center',
+                 arrowprops = dict(arrowstyle="->"), fontsize = 18)
+    ax1.annotate('$u_{*th}\/(F_c\/+\/S_c)$', 
+                 xy = (0.32, 0.8), 
+                 xytext = (0.6, 
+                           0.8),
+                 textcoords='data', verticalalignment='center',
+                 horizontalalignment = 'center',
+                 arrowprops = dict(arrowstyle="->"), fontsize = 18)
     [plt.setp(ax.get_yticklabels()[0], visible = False) for ax in [ax1, ax2]]
     all_ser = ser_1 + ser_2 + ser_3 + ser_4 + ser_5
     labs = [ser.get_label() for ser in all_ser]
