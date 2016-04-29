@@ -10,12 +10,15 @@ import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
 import pdb
 
 import respiration_photosynthesis_run as rp_run
 import DataIO as io
 import datetime_functions as dtf
 import solar_functions as sf
+import respiration as re
 
 reload (dtf)
 
@@ -157,38 +160,26 @@ def plot_CO2_profiles_diurnal():
     
     return diurnal_df
 
-def plot_NEE_diurnal():
-    
+def plot_NEE_diurnal_effect_of_storage():
+
     reload(rp_run)    
     
     f = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
-    var_list = ['Fc', 'Fc_u*', 'Fc_Sc', 'Fc_Sc_u*', 'Fc_Sc_pt', 'Fc_Sc_pt_u*']
-    stor_list = [False, False, True, True, True, True]
-    stor_var_list = ['Fc_storage_obs', 'Fc_storage_obs', 
-                     'Fc_storage_obs', 'Fc_storage_obs', 
-                     'Fc_storage', 'Fc_storage']
-    ustar_list = [0, 
-                  {'2011': 0.40,
-                   '2012': 0.39,
-                   '2013': 0.40,
-                   '2014': 0.42}, 
+    var_list = ['Fc', 'Fc_Sc', 'Fc_Sc_u*']
+    stor_list = [False, True, True]
+    ustar_list = [0,
                   0, 
                   {'2011': 0.31,
                    '2012': 0.30,
                    '2013': 0.32,
-                   '2014': 0.32},
-                  0, 
-                  {'2011': 0.40,
-                   '2012': 0.39,
-                   '2013': 0.40,
-                   '2014': 0.42}]
+                   '2014': 0.32}]
     
     # Get the uncorrected data and gap-fill Fc
     df = pd.DataFrame()
     for i, var in enumerate(var_list):
         
         temp_dict = rp_run.main(use_storage = stor_list[i],
-                                storage_var = stor_var_list[i],
+                                storage_var = 'Fc_storage_obs',
                                 ustar_threshold = ustar_list[i],
                                 config_file = f,
                                 do_light_response = True)[0]
@@ -206,27 +197,21 @@ def plot_NEE_diurnal():
 
     # Set plot iterables
     vars_dict = {1: ['Fc', 'Fc_Sc'],
-                 2: ['Fc_Sc', 'Fc_Sc_u*'],
-                 3: ['Fc', 'Fc_Sc_pt'],
-                 4: ['Fc_Sc_pt', 'Fc_Sc_pt_u*']}
+                 2: ['Fc_Sc', 'Fc_Sc_u*']}
                  
-    names_dict = {1: ['$F_c$', '$F_c\_S_c$'],
-                  2: ['$F_c\_S_c$', '$F_c\_S_c\_u_*$'],
-                  3: ['$F_c$', '$F_c\_S_{c\_pt}$'],
-                  4: ['$F_c\_S_{c\_pt}$', '$F_c\_S_{c\_pt}\_u_*$']}
+    names_dict = {1: ['$F_c$', '$F_c\/+\/S_c$'],
+                  2: ['$F_c\/+\/S_c$', '$(F_c\/+\/S_c)_{u_*corr}$']}
 
     lines_dict = {'Fc': ':',
                   'Fc_Sc': '--',
-                  'Fc_Sc_u*': '-',
-                  'Fc_Sc_pt': '--',
-                  'Fc_Sc_pt_u*': '-'}
+                  'Fc_Sc_u*': '-'}
 
     # Instantiate plot
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize = (16, 12))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (16, 6), sharex = True)
     fig.patch.set_facecolor('white')
     fig_labels = ['a)', 'b)', 'c)', 'd)']
 
-    for i, ax in enumerate((ax1, ax2, ax3, ax4)):
+    for i, ax in enumerate((ax1, ax2)):
 
         counter = i + 1
         ax.set_xlim([0, 24])
@@ -236,8 +221,7 @@ def plot_NEE_diurnal():
         ax.yaxis.set_ticks_position('left')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        if counter > 2:        
-            ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
+        ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
         if counter % 2 != 0:
             ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
         x = diurnal_df.index
@@ -259,36 +243,33 @@ def plot_NEE_diurnal():
         ax.text(-2.6, 3.8, fig_labels[i], fontsize = 12)
 
     fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-                'basic C paper/Images/diurnal_NEE_effects_of_correction.png',
+                'basic C paper/Images/diurnal_NEE_effects_of_storage_correction.png',
                 bbox_inches='tight',
                 dpi = 300)     
     plt.show()
 
-def plot_NEE_diurnal_2():
+
+
+def plot_NEE_diurnal_effect_of_no_storage():
     
     reload(rp_run)    
     
     f = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
-    var_list = ['Fc', 'Fc_u*', 'Fc_Sc', 'Fc_Sc_u*', 'Fc_Sc_pt', 'Fc_Sc_pt_u*']
-    stor_list = [False, False, True, True, True, True]
-    stor_var_list = ['Fc_storage_obs', 'Fc_storage_obs', 
-                     'Fc_storage_obs', 'Fc_storage_obs', 
-                     'Fc_storage', 'Fc_storage']
-    ustar_list = [0, 
-                  {'2011': 0.40,
+    var_list = ['Fc_u*', 'Fc_Sc_u*', 'Fc_Sc_pt_u*']
+    stor_list = [False, True, True]
+    stor_var_list = ['Fc_storage_obs', 'Fc_storage_obs', 'Fc_storage']
+    ustar_list = [{'2011': 0.40,
                    '2012': 0.39,
                    '2013': 0.40,
                    '2014': 0.42}, 
-                  0, 
                   {'2011': 0.31,
                    '2012': 0.30,
                    '2013': 0.32,
                    '2014': 0.32},
-                  0, 
-                  {'2011': 0.40,
-                   '2012': 0.39,
-                   '2013': 0.40,
-                   '2014': 0.42}]
+                  {'2011': 0.31,
+                   '2012': 0.30,
+                   '2013': 0.32,
+                   '2014': 0.32}]
     
     # Get the uncorrected data and gap-fill Fc
     df = pd.DataFrame()
@@ -312,12 +293,11 @@ def plot_NEE_diurnal_2():
     diurnal_df.index = np.linspace(0, 23.5, 48)
 
     # Set plot iterables
-    vars_dict = {1: ['Fc_u*', 'Fc_Sc_u*'],
-                 2: ['Fc_Sc_pt_u*', 'Fc_Sc_u*']}
-                 
-    names_dict = {1: ['$F_c\_u_*$', '$F_c\_S_c\_u_*$'],
-                  2: ['$F_c\_S_{c\_pt}\_u_*$', '$F_c\_S_c\_u_*$']}
+    vars_dict = {1: ['Fc_Sc_pt_u*', 'Fc_Sc_u*'],
+                 2: ['Fc_u*', 'Fc_Sc_u*']}
 
+    names_dict = {1: ['$(F_c\/+\/S_{c\_pt})_{u_*corr}$', '$(F_c\/+\/S_c)_{u_*corr}$'],
+                  2: ['$F_{c\_u_*corr}$', '$(F_c\/+\/S_c)_{u_*corr}$']}
 
     lines_dict = {'Fc_u*': '--',
                   'Fc_Sc_u*': '-',
@@ -338,8 +318,7 @@ def plot_NEE_diurnal_2():
         ax.yaxis.set_ticks_position('left')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        if counter > 2:        
-            ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
+        ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
         if counter % 2 != 0:
             ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
         x = diurnal_df.index
@@ -361,7 +340,7 @@ def plot_NEE_diurnal_2():
         ax.text(-2.6, 3.8, fig_labels[i], fontsize = 12)
 
     fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-                'basic C paper/Images/diurnal_NEE_effects_of_correction.png',
+                'basic C paper/Images/diurnal_NEE_effects_of_no_correction.png',
                 bbox_inches='tight',
                 dpi = 300)     
     plt.show()
@@ -1041,7 +1020,7 @@ def plot_T_resp():
     df.dropna(inplace = True)
 
     # Get T response function
-    params = dark.optimise_all({'NEE_series': df.Fc + df.Fc_storage_obs,
+    params = re.optimise_all({'NEE_series': df.Fc + df.Fc_storage_obs,
                                 'TempC': df.Ta},
                                 {'Eo_prior': 200,
                                  'rb_prior': 2})
@@ -1057,7 +1036,7 @@ def plot_T_resp():
     count_df = df.groupby('Ta_cat').count()
 
     # Make NEE estimated series
-    mean_df['Fc_est'] = dark.TRF({'TempC': mean_df.Ta}, params['Eo'], params['rb'])
+    mean_df['Fc_est'] = re.TRF({'TempC': mean_df.Ta}, params['Eo'], params['rb'])
 
     # Plot
     fig, ax = plt.subplots(1, 1, figsize = (12, 8))
@@ -1102,23 +1081,23 @@ def plot_T_resp_all():
     df.dropna(inplace = True)
 
     # Get T response function without profile measurements
-    params_nostor = dark.optimise_all({'NEE_series': df.Fc,
+    params_nostor = re.optimise_all({'NEE_series': df.Fc,
                                        'TempC': df.Ta},
                                       {'Eo_prior': 200,
                                        'rb_prior': 2})
 
     # Get T response function with profile measurements
-    params_stor = dark.optimise_all({'NEE_series': df.Fc + df.Fc_storage_obs,
+    params_stor = re.optimise_all({'NEE_series': df.Fc + df.Fc_storage_obs,
                                      'TempC': df.Ta},
                                     {'Eo_prior': 200,
                                      'rb_prior': 2}) 
 
     # Make NEE estimated series without storage
-    df['Fc_est'] = dark.TRF({'TempC': df.Ta}, 
+    df['Fc_est'] = re.TRF({'TempC': df.Ta}, 
                             params_nostor['Eo'], params_nostor['rb'])
 
     # Make NEE estimated series with storage
-    df['Fc_Sc_est'] = dark.TRF({'TempC': df.Ta}, 
+    df['Fc_Sc_est'] = re.TRF({'TempC': df.Ta}, 
                                params_stor['Eo'], params_stor['rb'])
 
     # Put into temperature categories
