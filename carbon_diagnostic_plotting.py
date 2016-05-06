@@ -19,6 +19,7 @@ import DataIO as io
 import datetime_functions as dtf
 import solar_functions as sf
 import respiration as re
+import random_error as rand_err
 
 reload (dtf)
 
@@ -345,6 +346,61 @@ def plot_NEE_diurnal_effect_of_no_storage():
                 dpi = 300)     
     plt.show()
 
+def plot_random_error():
+
+    reload(io)
+
+    var_list = ['Fc', 'Fc_storage_obs', 'Fc_storage', 'Ta', 'Fsd', 'ustar', 'Ws_CSAT']
+    name_swap_dict = {'Fc': 'NEE_series', 'Ws_CSAT': 'ws', 'Ta': 'TempC'}
+    random_configs_dict = {'pos_averaging_bins': 10,
+                           'neg_averaging_bins':10,
+                           'radiation_difference_threshold': 35,
+                           'temperature_difference_threshold': 3,
+                           'windspeed_difference_threshold': 1,
+                           'mean_series': 'NEE_model',
+                           'propagation_series': 'NEE_model',
+                           'measurement_interval': 30}
+
+    ustar_no_stor_dict = {'2011': 0.40,
+                          '2012': 0.39,
+                          '2013': 0.40,
+                          '2014': 0.42}
+
+    ustar_stor_dict = {'2011': 0.31,
+                       '2012': 0.30,
+                       '2013': 0.32,
+                       '2014': 0.32}
+
+    file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6.nc'
+    config_file = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
+    Fc_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=['Fc'], QC_accept_codes=[0])
+    data_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=var_list)
+    data_dict.update(Fc_dict)    
+    for var in name_swap_dict.keys():
+        data_dict[name_swap_dict[var]] = data_dict.pop(var)
+        
+    no_stor_mod = rp_run.main(use_storage = False,
+                              config_file = config_file,
+                              ustar_threshold = 0,
+                              do_light_response = True)[0]
+    
+    data_dict['NEE_model'] = no_stor_mod['GPP'] + no_stor_mod['Re']
+    
+    fig, no_stor_stats_dict, no_stor_rslt_dict = (
+        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
+    
+    stor_mod = rp_run.main(use_storage = True, 
+                           config_file = config_file,
+                           ustar_threshold = 0,
+                           do_light_response = True)[0]
+        
+    data_dict['NEE_model'] = stor_mod['GPP'] + stor_mod['Re']
+    
+    fig, stor_stats_dict, stor_rslt_dict = (
+        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
+    
+    return no_stor_rslt_dict, stor_rslt_dict
+    
 def plot_RUE_dependence_on_Sc():
     
     file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6.nc'
@@ -883,11 +939,11 @@ def plot_Sc_diurnal_with_ustar():
     respiration drivers on the right hand axis!
     """    
     
-    file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6_stor.nc'
+    file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6.nc'
     
-    storage_vars = ['Fc_storage_obs', 'Fc_storage_obs_1', 'Fc_storage_obs_2', 
+    storage_vars = ['Fc_storage_obs_1', 'Fc_storage_obs_2', 
                     'Fc_storage_obs_3', 'Fc_storage_obs_4', 'Fc_storage_obs_5', 
-                    'Fc_storage_obs_6',]    
+                    'Fc_storage_obs_6', 'Fc_storage_obs', 'Fc_storage']    
     
     df = io.OzFluxQCnc_to_data_structure(file_in, 
                                          var_list = (storage_vars + 
@@ -900,35 +956,49 @@ def plot_Sc_diurnal_with_ustar():
     diurnal_df['Fc_storage_obs_std'] = df['Fc_storage_obs'].groupby([lambda x: x.hour, 
                                                              lambda y: y.minute]).std()
     diurnal_df.index = np.linspace(0, 23.5, 48)
-    day_ind = diurnal_df[diurnal_df.Fsd > 5].index
 
-    storage_mean = diurnal_df.Fc_storage_obs.mean()
-    var_names = ['0-36m', '0-0.5m', '0.5-2m', '2-4m', '4-8m', '8-16m', '16-36m']
+    var_names = ['0-0.5m', '0.5-2m', '2-4m', '4-8m', '8-16m', '16-36m', '0-36m', 'EC_36m']
     
     # Create plot
-    fig = plt.figure(figsize = (12, 8))
+    fig = plt.figure(figsize = [13,8])
+    ax1 = host_subplot(111, axes_class=AA.Axes)
+    plt.subplots_adjust(right = 0.75)
     fig.patch.set_facecolor('white')
     colour_idx = np.linspace(0, 1, 6)
-    ax1 = plt.gca()
     ax2 = ax1.twinx()
+    ax3 = ax1.twinx()
+    offset = 80
+    new_fixed_axis = ax3.get_grid_helper().new_fixed_axis
+    ax3.axis["right"] = new_fixed_axis(loc="right",
+                                        axes=ax3,
+                                        offset=(offset, 0))
     ax1.set_xlim([0, 24])
     ax1.set_xticks([0,4,8,12,16,20,24])
-    ax1.tick_params(axis = 'x', labelsize = 14)
+    ax1.tick_params(axis = 'x', labelsize = 50)
     ax1.tick_params(axis = 'y', labelsize = 14)
     ax2.tick_params(axis = 'y', labelsize = 14)
-    ax1.set_xlabel('$Time\/(hours)$', fontsize = 20)
-    ax1.set_ylabel('$S_c\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 20)
-    ax2.set_ylabel('$u_{*}\/(m\/s^{-1})$', fontsize = 20)
+    ax1.set_xlabel('$Time\/(hours)$')
+    ax1.set_ylabel('$S_c\/(\mu mol C\/m^{-2} s^{-1})$')
+    ax1.axis['bottom'].label.set_fontsize(20)
+    ax1.axis['left'].label.set_fontsize(20)
+    ax2.set_ylabel('$u_{*}\/(m\/s^{-1})$')
+    ax2.axis['right'].label.set_fontsize(20)
+    ax3.set_ylabel('$Fsd\/(W\/m^{-2})$')
+    ax3.axis['right'].label.set_fontsize(20)
     series_list = []
-    for i, var in enumerate(storage_vars[1:]):
+    for i, var in enumerate(storage_vars[0:-2]):
         series_list.append(ax1.plot(diurnal_df.index, diurnal_df[var], 
                                     color = plt.cm.cool(colour_idx[i]), 
                                     label = var_names[i + 1]))
     series_list.append(ax1.plot(diurnal_df.index, diurnal_df.Fc_storage_obs, 
-                                color = '0.5', label = var_names[0]))
+                                color = '0.5', label = var_names[-2]))
+    series_list.append(ax1.plot(diurnal_df.index, diurnal_df.Fc_storage, 
+                                color = '0.5', linestyle = ':', label = var_names[-1]))
     series_list.append(ax2.plot(diurnal_df.index, diurnal_df.ustar, 
                                 color = 'black', label = '$u_*$'))
-    ax1.axhline(storage_mean, color = 'black')
+    series_list.append(ax3.plot(diurnal_df.index, diurnal_df.Fsd, 
+                                color = 'blue', label = '$Fsd$'))                                
+    ax1.axhline(0, color = '0.5')
 #    ax1.axvline(day_ind[0], color = 'black', linestyle = ':')
 #    ax1.axvline(day_ind[-1], color = 'black', linestyle = ':')
     ax2.axhline(0.42, linestyle = '--', color = 'black')    
@@ -936,10 +1006,10 @@ def plot_Sc_diurnal_with_ustar():
     plt.setp(ax2.get_yticklabels()[0], visible = False)
     labs = [ser[0].get_label() for ser in series_list]
     lst = [i[0] for i in series_list]
-    ax1.legend(lst, labs, fontsize = 16, loc = [0.08,0.75], 
+    ax1.legend(lst, labs, fontsize = 14, loc = [0.06,0.74], 
                numpoints = 1, ncol = 2, frameon = False)
     plt.tight_layout()
-    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+    plt.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
                 'basic C paper/Images/diurnal_storage.png',
                 bbox_inches='tight',
                 dpi = 300) 
