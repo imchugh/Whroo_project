@@ -19,7 +19,6 @@ import DataIO as io
 import datetime_functions as dtf
 import solar_functions as sf
 import respiration as re
-import random_error as rand_err
 
 reload (dtf)
 
@@ -346,60 +345,123 @@ def plot_NEE_diurnal_effect_of_no_storage():
                 dpi = 300)     
     plt.show()
 
+#def plot_random_error():
+#
+#    reload(io)
+#
+#    var_list = ['Fc', 'Fc_storage_obs', 'Fc_storage', 'Ta', 'Fsd', 'ustar', 'Ws_CSAT']
+#    name_swap_dict = {'Fc': 'NEE_series', 'Ws_CSAT': 'ws', 'Ta': 'TempC'}
+#    random_configs_dict = {'pos_averaging_bins': 10,
+#                           'neg_averaging_bins':10,
+#                           'radiation_difference_threshold': 35,
+#                           'temperature_difference_threshold': 3,
+#                           'windspeed_difference_threshold': 1,
+#                           'mean_series': 'NEE_model',
+#                           'propagation_series': 'NEE_model',
+#                           'measurement_interval': 30}
+#
+#    ustar_no_stor_dict = {'2011': 0.40,
+#                          '2012': 0.39,
+#                          '2013': 0.40,
+#                          '2014': 0.42}
+#
+#    ustar_stor_dict = {'2011': 0.31,
+#                       '2012': 0.30,
+#                       '2013': 0.32,
+#                       '2014': 0.32}
+#
+#    file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6.nc'
+#    config_file = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
+#    Fc_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=['Fc'], QC_accept_codes=[0])
+#    data_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=var_list)
+#    data_dict.update(Fc_dict)    
+#    for var in name_swap_dict.keys():
+#        data_dict[name_swap_dict[var]] = data_dict.pop(var)
+#        
+#    no_stor_mod = rp_run.main(use_storage = False,
+#                              config_file = config_file,
+#                              ustar_threshold = 0,
+#                              do_light_response = True)[0]
+#    
+#    data_dict['NEE_model'] = no_stor_mod['GPP'] + no_stor_mod['Re']
+#    
+#    fig, no_stor_stats_dict, no_stor_rslt_dict = (
+#        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
+#    
+#    stor_mod = rp_run.main(use_storage = True, 
+#                           config_file = config_file,
+#                           ustar_threshold = 0,
+#                           do_light_response = True)[0]
+#        
+#    data_dict['NEE_model'] = stor_mod['GPP'] + stor_mod['Re']
+#    
+#    fig, stor_stats_dict, stor_rslt_dict = (
+#        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
+#    
+#    return no_stor_rslt_dict, stor_rslt_dict
+
 def plot_random_error():
-
-    reload(io)
-
-    var_list = ['Fc', 'Fc_storage_obs', 'Fc_storage', 'Ta', 'Fsd', 'ustar', 'Ws_CSAT']
-    name_swap_dict = {'Fc': 'NEE_series', 'Ws_CSAT': 'ws', 'Ta': 'TempC'}
-    random_configs_dict = {'pos_averaging_bins': 10,
-                           'neg_averaging_bins':10,
-                           'radiation_difference_threshold': 35,
-                           'temperature_difference_threshold': 3,
-                           'windspeed_difference_threshold': 1,
-                           'mean_series': 'NEE_model',
-                           'propagation_series': 'NEE_model',
-                           'measurement_interval': 30}
-
-    ustar_no_stor_dict = {'2011': 0.40,
-                          '2012': 0.39,
-                          '2013': 0.40,
-                          '2014': 0.42}
-
-    ustar_stor_dict = {'2011': 0.31,
-                       '2012': 0.30,
-                       '2013': 0.32,
-                       '2014': 0.32}
-
-    file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6.nc'
-    config_file = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
-    Fc_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=['Fc'], QC_accept_codes=[0])
-    data_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=var_list)
-    data_dict.update(Fc_dict)    
-    for var in name_swap_dict.keys():
-        data_dict[name_swap_dict[var]] = data_dict.pop(var)
-        
-    no_stor_mod = rp_run.main(use_storage = False,
-                              config_file = config_file,
-                              ustar_threshold = 0,
-                              do_light_response = True)[0]
     
-    data_dict['NEE_model'] = no_stor_mod['GPP'] + no_stor_mod['Re']
+    target = '/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo basic C paper/Data/data.csv'
     
-    fig, no_stor_stats_dict, no_stor_rslt_dict = (
-        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
+    data_df = pd.read_csv(target)
+    data_df.drop('Unnamed: 0', inplace=True, axis = 1)
     
-    stor_mod = rp_run.main(use_storage = True, 
-                           config_file = config_file,
-                           ustar_threshold = 0,
-                           do_light_response = True)[0]
-        
-    data_dict['NEE_model'] = stor_mod['GPP'] + stor_mod['Re']
+    NEE_lst = [var for var in data_df.columns if 'NEE' in var]
+    sigdel_lst = [var for var in data_df.columns if 'sig' in var]
+    pairs_lst = [[NEE_lst[0], sigdel_lst[0]], 
+                 [NEE_lst[1], sigdel_lst[1]], 
+                 [NEE_lst[2], sigdel_lst[2]]]
+    myorder = [0, 2, 1]
+    pairs_lst = [pairs_lst[i] for i in myorder]
     
-    fig, stor_stats_dict, stor_rslt_dict = (
-        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
     
-    return no_stor_rslt_dict, stor_rslt_dict
+    day_list = []
+    night_list = []
+    
+    fig, ax1 = plt.subplots(1, 1, figsize = (12, 8))
+    fig.patch.set_facecolor('white')
+    ax1.xaxis.set_ticks_position('bottom')
+    ax1.set_ylim([0, 6])
+    ax1.yaxis.set_ticks_position('left')
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['top'].set_visible(False)
+    ax1.tick_params(axis = 'y', labelsize = 14)
+    ax1.tick_params(axis = 'x', labelsize = 14)
+    ax1.set_xlabel('$NEE\/(\mu molC\/m^{-2}\/s^{-1})$', fontsize = 18)
+    ax1.set_ylabel('$\sigma[\delta]\/(\mu molC\/m^{-2}\/s^{-1})$', fontsize = 18)
+    ax2 = ax1.twinx()
+    ax2.spines['right'].set_position('zero')
+    ax2.spines['left'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax2.set_ylim(ax1.get_ylim())
+    ax2.tick_params(axis = 'y', labelsize = 14)
+    plt.setp(ax2.get_yticklabels()[0], visible = False)
+    xticks = ax1.xaxis.get_major_ticks()
+    
+    markers = ['s', '^', 'h']
+    colors = ['0.5', '0', '1']
+    labels = ['$F_c$', '$F_c\/+\/S_c$', '$F_c\/+\/S_{c\_pt}$']
+    
+    for i, pair in enumerate(pairs_lst):
+        day_params = np.polyfit(data_df.loc[:10, pair[0]], 
+                                data_df.loc[:10, pair[1]],
+                                1)
+        day_NEE_vals = np.append(data_df.loc[:9, pair[0]], 0)
+        day_sigdel_vals = np.polyval(day_params, day_NEE_vals)
+        night_params = np.polyfit(data_df.loc[10:, pair[0]], 
+                                  data_df.loc[10:, pair[1]],
+                                  1)
+        night_NEE_vals = np.append(0, data_df.loc[10:, pair[0]])
+        night_sigdel_vals = np.polyval(night_params, night_NEE_vals)
+        ax1.plot(data_df[pair[0]], data_df[pair[1]], markers[i], 
+                 markersize = 10, markerfacecolor = colors[i], label = labels[i])
+        if not i == 2:             
+            ax1.plot(day_NEE_vals, day_sigdel_vals, color = colors[i])
+            ax1.plot(night_NEE_vals, night_sigdel_vals, color = colors[i])
+    ax1.legend(loc = 'upper left', numpoints = 1, frameon = False, fontsize = 18)
+
+    return    
     
 def plot_RUE_dependence_on_Sc():
     
