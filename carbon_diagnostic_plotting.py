@@ -13,6 +13,7 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import pdb
+import os
 
 import respiration_photosynthesis_run as rp_run
 import DataIO as io
@@ -58,14 +59,17 @@ def plot_CO2_diurnal():
     total_weight = 0
     for i, var in enumerate(vars_list[:len(new_list)]):
         prev_var = False if i == 0 else var        
-        prev_val = 0 if i == 0 else var
+        prev_val = 0 if i == 0 else val
         new_var = new_list[i]
         a = new_var.split('_')[-1]
         try:
             val = int(a.split('m')[0])
         except:
             val = float(a.split('m')[0])
-        weight_val = val - prev_val
+        try:
+            weight_val = val - prev_val
+        except:
+            pdb.set_trace()
         weight_val_list.append(weight_val)
         total_weight = total_weight + weight_val
         new_name = 'LI840_' + str(prev_val) + '-' + str(val) + 'm'
@@ -144,27 +148,11 @@ def plot_CO2_diurnal():
                 
     return
 
-def plot_CO2_profiles_diurnal():
-    
-    # Set var lists    
-    vars_list = ['Cc_LI840_32m', 'Cc_LI840_16m', 'Cc_LI840_8m', 'Cc_LI840_4m',
-                 'Cc_LI840_2m', 'Cc_LI840_1m', 'Fsd']
-    new_list = ['LI840_0.5m', 'LI840_2m', 'LI840_4m', 'LI840_8m', 'LI840_16m', 
-                'LI840_36m', 'Fsd']
-    # Get data
-    df = get_data(vars_list)
-    df.columns = new_list
-    
-    # Group
-    diurnal_df = df.groupby([lambda x: x.hour, lambda y: y.minute]).mean()
-    
-    return diurnal_df
-
 def plot_NEE_diurnal_effect_of_storage():
 
-    reload(rp_run)    
-    
-    f = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
+    reload(rp_run)
+  
+    f = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
     var_list = ['Fc', 'Fc_Sc', 'Fc_Sc_u*']
     stor_list = [False, True, True]
     ustar_list = [0,
@@ -223,7 +211,7 @@ def plot_NEE_diurnal_effect_of_storage():
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
         if counter % 2 != 0:
-            ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
+            ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
         x = diurnal_df.index
         var1 = vars_dict[counter][0]
         var2 = vars_dict[counter][1]
@@ -254,7 +242,7 @@ def plot_NEE_diurnal_effect_of_no_storage():
     
     reload(rp_run)    
     
-    f = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
+    f = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
     var_list = ['Fc_u*', 'Fc_Sc_u*', 'Fc_Sc_pt_u*']
     stor_list = [False, True, True]
     stor_var_list = ['Fc_storage_obs', 'Fc_storage_obs', 'Fc_storage']
@@ -320,7 +308,7 @@ def plot_NEE_diurnal_effect_of_no_storage():
         ax.spines['top'].set_visible(False)
         ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
         if counter % 2 != 0:
-            ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
+            ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
         x = diurnal_df.index
         var1 = vars_dict[counter][0]
         var2 = vars_dict[counter][1]
@@ -344,61 +332,6 @@ def plot_NEE_diurnal_effect_of_no_storage():
                 bbox_inches='tight',
                 dpi = 300)     
     plt.show()
-
-#def plot_random_error():
-#
-#    reload(io)
-#
-#    var_list = ['Fc', 'Fc_storage_obs', 'Fc_storage', 'Ta', 'Fsd', 'ustar', 'Ws_CSAT']
-#    name_swap_dict = {'Fc': 'NEE_series', 'Ws_CSAT': 'ws', 'Ta': 'TempC'}
-#    random_configs_dict = {'pos_averaging_bins': 10,
-#                           'neg_averaging_bins':10,
-#                           'radiation_difference_threshold': 35,
-#                           'temperature_difference_threshold': 3,
-#                           'windspeed_difference_threshold': 1,
-#                           'mean_series': 'NEE_model',
-#                           'propagation_series': 'NEE_model',
-#                           'measurement_interval': 30}
-#
-#    ustar_no_stor_dict = {'2011': 0.40,
-#                          '2012': 0.39,
-#                          '2013': 0.40,
-#                          '2014': 0.42}
-#
-#    ustar_stor_dict = {'2011': 0.31,
-#                       '2012': 0.30,
-#                       '2013': 0.32,
-#                       '2014': 0.32}
-#
-#    file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_2014_L6.nc'
-#    config_file = '/home/imchugh/Code/Python/Config_files/master_configs_2.txt'
-#    Fc_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=['Fc'], QC_accept_codes=[0])
-#    data_dict = io.OzFluxQCnc_to_data_structure(file_in, var_list=var_list)
-#    data_dict.update(Fc_dict)    
-#    for var in name_swap_dict.keys():
-#        data_dict[name_swap_dict[var]] = data_dict.pop(var)
-#        
-#    no_stor_mod = rp_run.main(use_storage = False,
-#                              config_file = config_file,
-#                              ustar_threshold = 0,
-#                              do_light_response = True)[0]
-#    
-#    data_dict['NEE_model'] = no_stor_mod['GPP'] + no_stor_mod['Re']
-#    
-#    fig, no_stor_stats_dict, no_stor_rslt_dict = (
-#        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
-#    
-#    stor_mod = rp_run.main(use_storage = True, 
-#                           config_file = config_file,
-#                           ustar_threshold = 0,
-#                           do_light_response = True)[0]
-#        
-#    data_dict['NEE_model'] = stor_mod['GPP'] + stor_mod['Re']
-#    
-#    fig, stor_stats_dict, stor_rslt_dict = (
-#        rand_err.regress_sigma_delta(data_dict, random_configs_dict))
-#    
-#    return no_stor_rslt_dict, stor_rslt_dict
 
 def plot_random_error():
     
@@ -428,8 +361,8 @@ def plot_random_error():
     ax1.spines['top'].set_visible(False)
     ax1.tick_params(axis = 'y', labelsize = 14)
     ax1.tick_params(axis = 'x', labelsize = 14)
-    ax1.set_xlabel('$NEE\/(\mu molC\/m^{-2}\/s^{-1})$', fontsize = 18)
-    ax1.set_ylabel('$\sigma[\delta]\/(\mu molC\/m^{-2}\/s^{-1})$', fontsize = 18)
+    ax1.set_xlabel('$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
+    ax1.set_ylabel('$\sigma[\delta]\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
     ax2 = ax1.twinx()
     ax2.spines['right'].set_position('zero')
     ax2.spines['left'].set_visible(False)
@@ -437,7 +370,6 @@ def plot_random_error():
     ax2.set_ylim(ax1.get_ylim())
     ax2.tick_params(axis = 'y', labelsize = 14)
     plt.setp(ax2.get_yticklabels()[0], visible = False)
-    xticks = ax1.xaxis.get_major_ticks()
     
     markers = ['s', '^', 'h']
     colors = ['0.5', '0', '1']
@@ -460,6 +392,11 @@ def plot_random_error():
             ax1.plot(day_NEE_vals, day_sigdel_vals, color = colors[i])
             ax1.plot(night_NEE_vals, night_sigdel_vals, color = colors[i])
     ax1.legend(loc = 'upper left', numpoints = 1, frameon = False, fontsize = 18)
+
+    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+                'basic C paper/Images/random_error.png',
+                bbox_inches='tight',
+                dpi = 300) 
 
     return    
     
@@ -490,13 +427,13 @@ def plot_RUE_dependence_on_Sc():
     ax1.tick_params(axis = 'y', labelsize = 14)
     ax2.tick_params(axis = 'y', labelsize = 14)
     ax1.set_xlabel('$Time (hours)$', fontsize = 22)
-    ax1.set_ylabel('$RUE\/(\mu mol C\/\mu mol\/photon^{-1}\/m^{-2} s^{-1})$', fontsize = 22)
+    ax1.set_ylabel('$RUE\/(\mu mol\/CO_2\/\mu mol\/photon^{-1}\/m^{-2}\/s^{-1})$', fontsize = 22)
     ax2.set_ylabel('$S_c\//\/F_c$', fontsize = 22)
     series_list = []
-    series_1 = ax1.plot(diurnal_df.index, (diurnal_df.Fc + 
+    series_1 = ax1.plot(diurnal_df.index, diurnal_df.Fc / diurnal_df.Fsd, 
+                        color = 'black', linestyle = '--', label = '$S_c$')
+    series_2 = ax1.plot(diurnal_df.index, (diurnal_df.Fc + 
                                            diurnal_df.Fc_storage_obs) / diurnal_df.Fsd, 
-                        color = '0.5', label = '$S_c$')
-    series_2 = ax1.plot(diurnal_df.index, diurnal_df.Fc / diurnal_df.Fsd, 
                         color = 'black', label = '$F_c\/+\/S_c$')
     series_3 = ax2.plot(diurnal_df.index, diurnal_df.Fc_storage_obs / diurnal_df.Fc, 
                         color = 'black', label = '$S_c\//\/F_c$', linestyle = ':')
@@ -581,7 +518,7 @@ def plot_Sc_Ac_contributions():
     ax1.yaxis.set_ticks_position('left')
     ax1.spines['right'].set_visible(False)
     ax1.spines['top'].set_visible(False)
-    ax1.set_ylabel(r'$C\/flux\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 22)
+    ax1.set_ylabel(r'$C\/flux\/(\mu mol C\/m^{-2}\/s^{-1})$', fontsize = 22)
     ax1.set_xlabel('$u_{*}\/(m\/s^{-1})$', fontsize = 22)
     ax1.set_xlim([0, 0.42])
     ax1.tick_params(axis = 'x', labelsize = 14)
@@ -709,7 +646,7 @@ def plot_Sc_all_levels_funct_ustar(correct_storage = False):
             ax1.plot(corr_df.ustar, corr_df[var], color = plt.cm.cool(colour_idx[i]), 
                      linestyle = '--')
     ax1.axhline(y = 0, color  = 'black', linestyle = '-')
-    ax1.set_ylabel(r'$S_c\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 22)
+    ax1.set_ylabel(r'$S_c\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 22)
     ax1.set_xlabel('$u_{*}\/(m\/s^{-1})$', fontsize = 22)
     ax1.tick_params(axis = 'x', labelsize = 14)
     ax1.tick_params(axis = 'y', labelsize = 14)
@@ -718,9 +655,10 @@ def plot_Sc_all_levels_funct_ustar(correct_storage = False):
     ax1.spines['right'].set_visible(False)
     ax1.spines['top'].set_visible(False)
     plt.setp(ax1.get_yticklabels()[0], visible = False)
-    ax1.legend(fontsize = 16, loc = [0.83,0.6], numpoints = 1, frameon = False)
-    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-                'basic C paper/Images/ustar_vs_storage.png',
+    ax1.legend(fontsize = 16, loc = [0.83,0.56], numpoints = 1, frameon = False)
+    file_name = 'ustar_vs_storage.png' if correct_storage else 'ustar_vs_storage_corr.png'
+    fig.savefig(os.path.join('/media/Data/Dropbox/Work/Manuscripts in progress/' \
+                             'Writing/Whroo basic C paper/Images/', file_name),
                 bbox_inches='tight',
                 dpi = 300) 
     plt.show()
@@ -775,7 +713,7 @@ def plot_Sc_dependence_time_after_sunset():
     gs = gridspec.GridSpec(2, 1, height_ratios=[3,1.5])
     ax1 = plt.subplot(gs[0])
     ax1.set_xlim([0.5,14])
-    ax1.set_ylabel('$S_c\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
+    ax1.set_ylabel('$S_c\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
     ax1.xaxis.set_ticks_position('bottom')
     ax1.set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
     ax1.set_xticklabels(['',2,'',4,'',6,'',8,'',10,'',12,'',14])
@@ -874,7 +812,7 @@ def plot_Sc_Fc_Ac_funct_ustar():
     ax1.axvline(x = 0.42, color  = 'grey')
     ax1.axvline(x = 0.32, color  = 'grey')
     ax1.axhline(y = 0, color  = 'black', linestyle = '-')
-    ax1.set_ylabel(r'$C\/flux\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 22)
+    ax1.set_ylabel(r'$C\/flux\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 22)
     ax1.set_xlabel('$u_{*}\/(m\/s^{-1})$', fontsize = 22)
     ax1.tick_params(axis = 'x', labelsize = 14)
     ax1.tick_params(axis = 'y', labelsize = 14)
@@ -958,8 +896,8 @@ def plot_Sc_Fc_funct_ustar(correct_storage = False):
     ax1.axvline(x = 0.42, color = 'grey')
     ax1.axvline(x = 0.32, color = 'grey')
     ax1.axhline(y = 0, color  = 'black', linestyle = '-')
-    ax1.set_ylabel(r'$C\/flux\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 22)
-    ax2.set_ylabel('$T_{a}\/(^{o}C)\//\/VWC\/(m^{3}m^{-3}\/$'+'x'+'$\/10^{2})$', 
+    ax1.set_ylabel(r'$C\/flux\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 22)
+    ax2.set_ylabel('$T_{a}\/(^{o}C)\//\/VWC\/(m^{3}\/m^{-3}\/$'+'x'+'$\/10^{2})$', 
                    fontsize = 20)
     ax2.set_ylim([-5,25])
     ax1.set_xlabel('$u_{*}\/(m\/s^{-1})$', fontsize = 22)
@@ -1037,12 +975,13 @@ def plot_Sc_diurnal_with_ustar():
     ax1.set_xlim([0, 24])
     ax1.set_xticks([0,4,8,12,16,20,24])
     ax1.tick_params(axis = 'x', labelsize = 50)
-    ax1.tick_params(axis = 'y', labelsize = 14)
+    ax1.tick_params(axis = 'y', labelsize = 18)
     ax2.tick_params(axis = 'y', labelsize = 14)
     ax1.set_xlabel('$Time\/(hours)$')
-    ax1.set_ylabel('$S_c\/(\mu mol C\/m^{-2} s^{-1})$')
+    ax1.set_ylabel('$S_c\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$')
     ax1.axis['bottom'].label.set_fontsize(20)
     ax1.axis['left'].label.set_fontsize(20)
+    ax1.xaxis.set_ticks_position('bottom')
     ax2.set_ylabel('$u_{*}\/(m\/s^{-1})$')
     ax2.axis['right'].label.set_fontsize(20)
     ax3.set_ylabel('$Fsd\/(W\/m^{-2})$')
@@ -1073,7 +1012,7 @@ def plot_Sc_diurnal_with_ustar():
     plt.tight_layout()
     plt.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
                 'basic C paper/Images/diurnal_storage.png',
-                bbox_inches='tight',
+#                bbox_inches='tight',
                 dpi = 300) 
     plt.show()
     
@@ -1126,8 +1065,12 @@ def plot_Sc_ustar_example_time_series():
              df.loc[dates_list[0]: dates_list[1], 'ustar'], label = 'ustar',
              linestyle = ':', color = 'black')
     ax2.axhline(0.42, color = 'grey', linestyle = '--')
-    ax1.legend(loc = [0.7, 0.72], ncol = 2)
+    ax1.legend(loc = [0.7, 0.72], ncol = 2, frameon = False)
     plt.tight_layout()
+    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+            'basic C paper/Images/CO2_time_series.png',
+            bbox_inches='tight',
+            dpi = 300) 
     plt.show()
     
     return
@@ -1178,7 +1121,7 @@ def plot_T_resp():
     ax.tick_params(axis = 'x', labelsize = 14)
     ax.tick_params(axis = 'y', labelsize = 14)
     ax.set_xlabel('$Air\/temperature\/(^oC)$', fontsize = 18)
-    ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
+    ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2}\/s^{-1})$', fontsize = 18)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
     ax.spines['right'].set_visible(False)
@@ -1251,7 +1194,7 @@ def plot_T_resp_all():
     ax.tick_params(axis = 'x', labelsize = 14)
     ax.tick_params(axis = 'y', labelsize = 14)
     ax.set_xlabel('$Air\/temperature\/(^oC)$', fontsize = 18)
-    ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2} s^{-1})$', fontsize = 18)
+    ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2}\/s^{-1})$', fontsize = 18)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
     ax.spines['right'].set_visible(False)
