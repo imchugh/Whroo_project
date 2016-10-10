@@ -118,11 +118,11 @@ ax1.spines['top'].set_visible(False)
 ax1.tick_params(axis = 'y', labelsize = 14)
 ax1.set_ylabel('$CO_2\/(ppm)$', fontsize = 20)
 weight_series = diurnal_df['LI840_0-36m'] + base_line - prof_mean
-ax1.plot(x_axis, weight_series, label = '0-36m', color = 'black')
+ax1.plot(x_axis, weight_series, label = '$Profile$', color = 'black')
 EC_series = diurnal_df['LI7500_36m'] + base_line - EC_mean
-ax1.plot(x_axis, EC_series, label = 'EC_36m', color = '0.5')
+ax1.plot(x_axis, EC_series, label = '$EC$', color = '0.5')
 ax1.axhline(base_line, color = 'black')
-
+ax1.legend(loc = [0.06, 0.82], frameon = False, fontsize = 18)
 
 # Subplot 2
 ax2.set_xlim([0, 24])
@@ -141,7 +141,7 @@ ax2.set_xlabel('$Time\/(hours)$', fontsize = 20)
 ax2.set_ylabel('$S_c\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 20)
 ax2.plot(x_axis, diurnal_df.Fc_storage_obs, color = 'black', label = '$Profile$')
 ax2.plot(x_axis, diurnal_df['Fc_storage_calc'], color = '0.5', label = '$EC$')
-ax2.legend(loc = [0.06, 0.82], frameon = False, fontsize = 18)
+#ax2.legend(loc = [0.06, 0.82], frameon = False, fontsize = 18)
 
 new_frame = pd.DataFrame({'a': np.tile(diurnal_df.Fc_storage_obs.mean(), 12), 
                           'b': diurnal_df.Fc_storage_obs.iloc[7:19]}, 

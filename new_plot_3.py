@@ -101,46 +101,4 @@ ax2_r.text(11, 0.41, '$u_*\/threshold\/(F_c)$', fontsize = 18)
 
 all_s = s1 + s2
 labs = [s.get_label() for s in all_s]
-ax2.legend(all_s, labs, loc = [0.75, 0.77], frameon = False, fontsize = 18)
-
-#new_frame = pd.DataFrame({'a': np.tile(diurnal_df.Fc_storage_obs.mean(), 12), 
-#                          'b': diurnal_df.Fc_storage_obs.iloc[7:19]}, 
-#                         index = diurnal_df.index[7:19])
-#this_x = new_frame.index
-#this_y1 = new_frame['a']
-#this_y2 = new_frame['b']
-#ax2.fill_between(this_x, this_y1, this_y2, where=this_y1<=this_y2, 
-#                 facecolor = 'grey', alpha = 0.3, edgecolor = 'None', interpolate = True)
-#
-#new_frame = pd.DataFrame({'a': np.tile(diurnal_df.Fc_storage_obs.mean(), 9), 
-#                          'b': diurnal_df.Fc_storage_obs.iloc[34:43]}, 
-#                         index = diurnal_df.index[34:43])
-#add_frame = pd.DataFrame({'a': diurnal_df.Fc_storage_obs.mean(),
-#                          'b': -1.56},
-#                          index = [21.4])
-#new_frame = new_frame.append(add_frame)
-#this_x = new_frame.index
-#this_y1 = new_frame['a']
-#this_y2 = new_frame['b']
-#ax2.fill_between(this_x, this_y1, this_y2, where=this_y1>=this_y2, 
-#                 facecolor = 'grey', alpha = 0.3, 
-#                 edgecolor = 'None', interpolate = True)
-#                 
-#
-#
-#transFigure = fig.transFigure.inverted()
-#L1_coord1 = transFigure.transform(ax1.transData.transform([9, 395]))
-#L1_coord2 = transFigure.transform(ax2.transData.transform([9, diurnal_df['Fc_storage_obs'].mean()]))
-#line1 = matplotlib.lines.Line2D((L1_coord1[0], L1_coord2[0]),
-#                                (L1_coord1[1], L1_coord2[1]),
-#                                transform=fig.transFigure, color = 'black',
-#                                linestyle = ':')
-#L2_coord1 = transFigure.transform(ax1.transData.transform([21.4, 395]))
-#L2_coord2 = transFigure.transform(ax2.transData.transform([21.4, -1.6]))
-#line2 = matplotlib.lines.Line2D((L2_coord1[0], L2_coord2[0]),
-#                                (L2_coord1[1], L2_coord2[1]),
-#                                transform=fig.transFigure, color = 'black',
-#                                linestyle = ':')
-                                
-#fig.lines = line1, line2
-        
+ax2.legend(all_s, labs, loc = [0.75, 0.77], frameon = False, fontsize = 18)        
