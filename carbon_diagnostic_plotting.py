@@ -32,373 +32,373 @@ def get_data(var_list = None):
     return io.OzFluxQCnc_to_data_structure(file_in, var_list = var_list, 
                                            output_structure = 'pandas')
 
-def plot_CO2_diurnal():
+#def plot_CO2_diurnal():
+#
+#    """
+#    This script plots CO2 mixing ratio as a function of time of day
+#    """    
+#
+#    # Set var lists    
+#    vars_list = ['Cc_LI840_32m', 'Cc_LI840_16m', 'Cc_LI840_8m', 'Cc_LI840_4m',
+#                 'Cc_LI840_2m', 'Cc_LI840_1m', 'Cc_7500_Av', 'ps', 'Ta', 'Fsd']
+#    new_list = ['LI840_0.5m', 'LI840_2m', 'LI840_4m', 'LI840_8m', 'LI840_16m', 
+#                'LI840_36m']
+#
+#    # Get data
+#    df = get_data(vars_list)
+#
+#    # Convert LI7500 CO2 density to mixing ratio    
+#    df['C_mol'] = df.Cc_7500_Av / (44*10**3)
+#    df['air_mol'] = df.ps *10 ** 3 / (8.3143 * (273.15 + df.Ta))
+#    df['LI7500_36m'] = df.C_mol / df.air_mol * 10**6
+#
+#    # Calculate layer mixing ratio averages, weights and make new names
+#    layer_names_list = []
+#    weight_val_list = []
+#    work_df = pd.DataFrame(index = df.index)
+#    total_weight = 0
+#    for i, var in enumerate(vars_list[:len(new_list)]):
+#        prev_var = False if i == 0 else var        
+#        prev_val = 0 if i == 0 else val
+#        new_var = new_list[i]
+#        a = new_var.split('_')[-1]
+#        try:
+#            val = int(a.split('m')[0])
+#        except:
+#            val = float(a.split('m')[0])
+#        try:
+#            weight_val = val - prev_val
+#        except:
+#            pdb.set_trace()
+#        weight_val_list.append(weight_val)
+#        total_weight = total_weight + weight_val
+#        new_name = 'LI840_' + str(prev_val) + '-' + str(val) + 'm'
+#        layer_names_list.append(new_name)
+#        if prev_var:
+#            work_df[new_name] = ((df[var] + df[prev_var]) / 2) * weight_val
+#        else:
+#            work_df[new_name] = df[var] * weight_val
+#
+#    # Calculate weighted sum then remove weighting from individual layers            
+#    work_df['LI840_0-36m'] = work_df.sum(axis = 1) / total_weight
+#    work_df['Fsd'] = df['Fsd']
+#    for i, var in enumerate(layer_names_list):
+#        work_df[var] = work_df[var] / weight_val_list[i]
+#    work_df['LI7500_36m'] = df['LI7500_36m']
+#    work_df.dropna(inplace = True)
+#
+#    # Create a diurnal average df
+#    layer_names_list = layer_names_list + ['LI840_0-36m', 'LI7500_36m', 'Fsd']
+#    diurnal_df = work_df[layer_names_list].loc['2012'].groupby([lambda x: x.hour, 
+#                                                    lambda y: y.minute]).mean()
+#    diurnal_df.index = np.arange(48) / 2.0
+#
+#    # Plot it
+#    fig, ax = plt.subplots(1, 1, figsize = (12, 8))
+#    fig.patch.set_facecolor('white')
+#    colour_idx = np.linspace(0, 1, 6)
+#    x_axis = diurnal_df.index
+#    base_line = diurnal_df['LI840_0-36m'].mean()
+#    print base_line
+#    align_dict = {'buildup': {'arrow_y': 395,
+#                              'text_x': 11,
+#                              'text_y': 403},
+#                  'drawdown': {'arrow_y': 395,
+#                               'text_x': 19,
+#                               'text_y': 403}}
+#    ax.set_xticks([0,4,8,12,16,20,24])
+#    ax.set_xlim([0, 24])
+#    ax.xaxis.set_ticks_position('bottom')
+#    ax.yaxis.set_ticks_position('left')
+#    ax.spines['right'].set_visible(False)
+#    ax.spines['top'].set_visible(False)
+#    ax.tick_params(axis = 'x', labelsize = 14)
+#    ax.tick_params(axis = 'y', labelsize = 14)
+#    ax.set_xlabel('$Time\/(hours)$', fontsize = 20)
+#    ax.set_ylabel('$CO_2\/(ppm)$', fontsize = 20)
+#    for i, var in enumerate(layer_names_list[:-3]):
+#        color = plt.cm.cool(colour_idx[i])
+#        this_series = diurnal_df[var] #- diurnal_df[var].mean() + base_line
+#        label = var.split('_')[-1]
+#        ax.plot(x_axis, this_series, color = color, linewidth = 0.5, label = label)
+#    weight_series = diurnal_df['LI840_0-36m'] #- diurnal_df['LI840_0-36m'].mean() + base_line
+#    ax.plot(x_axis, weight_series, label = '0-36m', color = '0.5',
+#            linewidth = 2)
+#    EC_series = diurnal_df['LI7500_36m'] - diurnal_df['LI7500_36m'].mean() + base_line
+#    ax.plot(x_axis, EC_series, label = 'EC_36m', color = 'black',
+#            linewidth = 2)
+#    ax.axhline(base_line, color = '0.5', linewidth = 2)
+#    ax.axvline(6, color = 'black', linestyle = ':')    
+#    ax.axvline(18, color = 'black', linestyle = ':')
+#    ax.legend(loc = [0.32, 0.82], frameon = False, ncol = 2)
+#    ax.annotate('$CO_2\/drawdown$ \n $termination$ \n $(2100)$' , 
+#                xy = (21, align_dict['drawdown']['arrow_y']), 
+#                xytext = (align_dict['drawdown']['text_x'], 
+#                          align_dict['drawdown']['text_y']),
+#                textcoords='data', verticalalignment='center',
+#                horizontalalignment = 'center',
+#                arrowprops = dict(arrowstyle="->"), fontsize = 16)
+#    ax.annotate('$CO_2\/buildup$ \n $termination$ \n $(0900)$' , 
+#                xy = (9.4, align_dict['buildup']['arrow_y']), 
+#                xytext = (align_dict['buildup']['text_x'], 
+#                          align_dict['buildup']['text_y']),
+#                textcoords='data', verticalalignment='center',
+#                horizontalalignment = 'center',
+#                arrowprops = dict(arrowstyle="->"), fontsize = 16)
+#                
+#    return
 
-    """
-    This script plots CO2 mixing ratio as a function of time of day
-    """    
-
-    # Set var lists    
-    vars_list = ['Cc_LI840_32m', 'Cc_LI840_16m', 'Cc_LI840_8m', 'Cc_LI840_4m',
-                 'Cc_LI840_2m', 'Cc_LI840_1m', 'Cc_7500_Av', 'ps', 'Ta', 'Fsd']
-    new_list = ['LI840_0.5m', 'LI840_2m', 'LI840_4m', 'LI840_8m', 'LI840_16m', 
-                'LI840_36m']
-
-    # Get data
-    df = get_data(vars_list)
-
-    # Convert LI7500 CO2 density to mixing ratio    
-    df['C_mol'] = df.Cc_7500_Av / (44*10**3)
-    df['air_mol'] = df.ps *10 ** 3 / (8.3143 * (273.15 + df.Ta))
-    df['LI7500_36m'] = df.C_mol / df.air_mol * 10**6
-
-    # Calculate layer mixing ratio averages, weights and make new names
-    layer_names_list = []
-    weight_val_list = []
-    work_df = pd.DataFrame(index = df.index)
-    total_weight = 0
-    for i, var in enumerate(vars_list[:len(new_list)]):
-        prev_var = False if i == 0 else var        
-        prev_val = 0 if i == 0 else val
-        new_var = new_list[i]
-        a = new_var.split('_')[-1]
-        try:
-            val = int(a.split('m')[0])
-        except:
-            val = float(a.split('m')[0])
-        try:
-            weight_val = val - prev_val
-        except:
-            pdb.set_trace()
-        weight_val_list.append(weight_val)
-        total_weight = total_weight + weight_val
-        new_name = 'LI840_' + str(prev_val) + '-' + str(val) + 'm'
-        layer_names_list.append(new_name)
-        if prev_var:
-            work_df[new_name] = ((df[var] + df[prev_var]) / 2) * weight_val
-        else:
-            work_df[new_name] = df[var] * weight_val
-
-    # Calculate weighted sum then remove weighting from individual layers            
-    work_df['LI840_0-36m'] = work_df.sum(axis = 1) / total_weight
-    work_df['Fsd'] = df['Fsd']
-    for i, var in enumerate(layer_names_list):
-        work_df[var] = work_df[var] / weight_val_list[i]
-    work_df['LI7500_36m'] = df['LI7500_36m']
-    work_df.dropna(inplace = True)
-
-    # Create a diurnal average df
-    layer_names_list = layer_names_list + ['LI840_0-36m', 'LI7500_36m', 'Fsd']
-    diurnal_df = work_df[layer_names_list].loc['2012'].groupby([lambda x: x.hour, 
-                                                    lambda y: y.minute]).mean()
-    diurnal_df.index = np.arange(48) / 2.0
-
-    # Plot it
-    fig, ax = plt.subplots(1, 1, figsize = (12, 8))
-    fig.patch.set_facecolor('white')
-    colour_idx = np.linspace(0, 1, 6)
-    x_axis = diurnal_df.index
-    base_line = diurnal_df['LI840_0-36m'].mean()
-    print base_line
-    align_dict = {'buildup': {'arrow_y': 395,
-                              'text_x': 11,
-                              'text_y': 403},
-                  'drawdown': {'arrow_y': 395,
-                               'text_x': 19,
-                               'text_y': 403}}
-    ax.set_xticks([0,4,8,12,16,20,24])
-    ax.set_xlim([0, 24])
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.tick_params(axis = 'x', labelsize = 14)
-    ax.tick_params(axis = 'y', labelsize = 14)
-    ax.set_xlabel('$Time\/(hours)$', fontsize = 20)
-    ax.set_ylabel('$CO_2\/(ppm)$', fontsize = 20)
-    for i, var in enumerate(layer_names_list[:-3]):
-        color = plt.cm.cool(colour_idx[i])
-        this_series = diurnal_df[var] #- diurnal_df[var].mean() + base_line
-        label = var.split('_')[-1]
-        ax.plot(x_axis, this_series, color = color, linewidth = 0.5, label = label)
-    weight_series = diurnal_df['LI840_0-36m'] #- diurnal_df['LI840_0-36m'].mean() + base_line
-    ax.plot(x_axis, weight_series, label = '0-36m', color = '0.5',
-            linewidth = 2)
-    EC_series = diurnal_df['LI7500_36m'] - diurnal_df['LI7500_36m'].mean() + base_line
-    ax.plot(x_axis, EC_series, label = 'EC_36m', color = 'black',
-            linewidth = 2)
-    ax.axhline(base_line, color = '0.5', linewidth = 2)
-    ax.axvline(6, color = 'black', linestyle = ':')    
-    ax.axvline(18, color = 'black', linestyle = ':')
-    ax.legend(loc = [0.32, 0.82], frameon = False, ncol = 2)
-    ax.annotate('$CO_2\/drawdown$ \n $termination$ \n $(2100)$' , 
-                xy = (21, align_dict['drawdown']['arrow_y']), 
-                xytext = (align_dict['drawdown']['text_x'], 
-                          align_dict['drawdown']['text_y']),
-                textcoords='data', verticalalignment='center',
-                horizontalalignment = 'center',
-                arrowprops = dict(arrowstyle="->"), fontsize = 16)
-    ax.annotate('$CO_2\/buildup$ \n $termination$ \n $(0900)$' , 
-                xy = (9.4, align_dict['buildup']['arrow_y']), 
-                xytext = (align_dict['buildup']['text_x'], 
-                          align_dict['buildup']['text_y']),
-                textcoords='data', verticalalignment='center',
-                horizontalalignment = 'center',
-                arrowprops = dict(arrowstyle="->"), fontsize = 16)
-                
-    return
-
-def plot_NEE_diurnal_effect_of_storage():
-
-    reload(rp_run)
-  
-    f = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
-    var_list = ['Fc', 'Fc_Sc', 'Fc_Sc_u*']
-    stor_list = [False, True, True]
-    ustar_list = [0,
-                  0, 
-                  {'2011': 0.31,
-                   '2012': 0.30,
-                   '2013': 0.32,
-                   '2014': 0.32}]
-    
-    # Get the uncorrected data and gap-fill Fc
-    df = pd.DataFrame()
-    for i, var in enumerate(var_list):
-        
-        temp_dict = rp_run.main(use_storage = stor_list[i],
-                                storage_var = 'Fc_storage_obs',
-                                ustar_threshold = ustar_list[i],
-                                config_file = f,
-                                do_light_response = True)[0]
-        temp_dict['NEE_est'] = temp_dict['Re'] + temp_dict['GPP']
-        temp_dict['NEE_filled'] = temp_dict['NEE_series']
-        temp_dict['NEE_filled'][np.isnan(temp_dict['NEE_filled'])] = \
-            temp_dict['NEE_est'][np.isnan(temp_dict['NEE_filled'])]
-        df[var] = temp_dict['NEE_filled']
-        if i == 0:
-            df.index = temp_dict['date_time']
- 
-    # Do calculations of means for all groups
-    diurnal_df = df.groupby([lambda x: x.hour, lambda y: y.minute]).mean()
-    diurnal_df.index = np.linspace(0, 23.5, 48)
-
-    # Set plot iterables
-    vars_dict = {1: ['Fc', 'Fc_Sc'],
-                 2: ['Fc_Sc', 'Fc_Sc_u*']}
-                 
-    names_dict = {1: ['$F_c$', '$F_c\/+\/S_c$'],
-                  2: ['$F_c\/+\/S_c$', '$(F_c\/+\/S_c)_{u_*corr}$']}
-
-    lines_dict = {'Fc': ':',
-                  'Fc_Sc': '--',
-                  'Fc_Sc_u*': '-'}
-
-    # Instantiate plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (16, 6), sharex = True)
-    fig.patch.set_facecolor('white')
-    fig_labels = ['a)', 'b)', 'c)', 'd)']
-
-    for i, ax in enumerate((ax1, ax2)):
-
-        counter = i + 1
-        ax.set_xlim([0, 24])
-        ax.set_ylim([-10, 4])
-        ax.set_xticks([0,4,8,12,16,20,24])
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
-        if counter % 2 != 0:
-            ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
-        x = diurnal_df.index
-        var1 = vars_dict[counter][0]
-        var2 = vars_dict[counter][1]
-        y1 = diurnal_df[var1]
-        y2 = diurnal_df[var2]
-        ax.plot(x, y1, color = 'black', linestyle = lines_dict[var1], 
-                linewidth = 2, label = names_dict[counter][0])
-        ax.plot(x, y2, color = 'black', linestyle = lines_dict[var2], 
-                linewidth = 2, label = names_dict[counter][1])
-        ax.fill_between(x, y1, y2, where=y2>=y1, facecolor='0.8', 
-                        edgecolor='None',interpolate=True)
-        ax.fill_between(x, y1, y2, where=y1>=y2, facecolor='0.8', 
-                        edgecolor='None',interpolate=True)
-
-        ax.legend(fontsize = 18, loc = 'lower right', frameon = False)
-        ax.axhline(y = 0, color = 'black', linestyle = '-')
-        ax.text(-2.6, 3.8, fig_labels[i], fontsize = 12)
-
-    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-                'basic C paper/Images/diurnal_NEE_effects_of_storage_correction.png',
-                bbox_inches='tight',
-                dpi = 300)     
-    plt.show()
+#def plot_NEE_diurnal_effect_of_storage():
+#
+#    reload(rp_run)
+#  
+#    f = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
+#    var_list = ['Fc', 'Fc_Sc', 'Fc_Sc_u*']
+#    stor_list = [False, True, True]
+#    ustar_list = [0,
+#                  0, 
+#                  {'2011': 0.31,
+#                   '2012': 0.30,
+#                   '2013': 0.32,
+#                   '2014': 0.32}]
+#    
+#    # Get the uncorrected data and gap-fill Fc
+#    df = pd.DataFrame()
+#    for i, var in enumerate(var_list):
+#        
+#        temp_dict = rp_run.main(use_storage = stor_list[i],
+#                                storage_var = 'Fc_storage_obs',
+#                                ustar_threshold = ustar_list[i],
+#                                config_file = f,
+#                                do_light_response = True)[0]
+#        temp_dict['NEE_est'] = temp_dict['Re'] + temp_dict['GPP']
+#        temp_dict['NEE_filled'] = temp_dict['NEE_series']
+#        temp_dict['NEE_filled'][np.isnan(temp_dict['NEE_filled'])] = \
+#            temp_dict['NEE_est'][np.isnan(temp_dict['NEE_filled'])]
+#        df[var] = temp_dict['NEE_filled']
+#        if i == 0:
+#            df.index = temp_dict['date_time']
+# 
+#    # Do calculations of means for all groups
+#    diurnal_df = df.groupby([lambda x: x.hour, lambda y: y.minute]).mean()
+#    diurnal_df.index = np.linspace(0, 23.5, 48)
+#
+#    # Set plot iterables
+#    vars_dict = {1: ['Fc', 'Fc_Sc'],
+#                 2: ['Fc_Sc', 'Fc_Sc_u*']}
+#                 
+#    names_dict = {1: ['$F_c$', '$F_c\/+\/S_c$'],
+#                  2: ['$F_c\/+\/S_c$', '$(F_c\/+\/S_c)_{u_*corr}$']}
+#
+#    lines_dict = {'Fc': ':',
+#                  'Fc_Sc': '--',
+#                  'Fc_Sc_u*': '-'}
+#
+#    # Instantiate plot
+#    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (16, 6), sharex = True)
+#    fig.patch.set_facecolor('white')
+#    fig_labels = ['a)', 'b)', 'c)', 'd)']
+#
+#    for i, ax in enumerate((ax1, ax2)):
+#
+#        counter = i + 1
+#        ax.set_xlim([0, 24])
+#        ax.set_ylim([-10, 4])
+#        ax.set_xticks([0,4,8,12,16,20,24])
+#        ax.xaxis.set_ticks_position('bottom')
+#        ax.yaxis.set_ticks_position('left')
+#        ax.spines['right'].set_visible(False)
+#        ax.spines['top'].set_visible(False)
+#        ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
+#        if counter % 2 != 0:
+#            ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
+#        x = diurnal_df.index
+#        var1 = vars_dict[counter][0]
+#        var2 = vars_dict[counter][1]
+#        y1 = diurnal_df[var1]
+#        y2 = diurnal_df[var2]
+#        ax.plot(x, y1, color = 'black', linestyle = lines_dict[var1], 
+#                linewidth = 2, label = names_dict[counter][0])
+#        ax.plot(x, y2, color = 'black', linestyle = lines_dict[var2], 
+#                linewidth = 2, label = names_dict[counter][1])
+#        ax.fill_between(x, y1, y2, where=y2>=y1, facecolor='0.8', 
+#                        edgecolor='None',interpolate=True)
+#        ax.fill_between(x, y1, y2, where=y1>=y2, facecolor='0.8', 
+#                        edgecolor='None',interpolate=True)
+#
+#        ax.legend(fontsize = 18, loc = 'lower right', frameon = False)
+#        ax.axhline(y = 0, color = 'black', linestyle = '-')
+#        ax.text(-2.6, 3.8, fig_labels[i], fontsize = 12)
+#
+#    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+#                'basic C paper/Images/diurnal_NEE_effects_of_storage_correction.png',
+#                bbox_inches='tight',
+#                dpi = 300)     
+#    plt.show()
 
 
 
-def plot_NEE_diurnal_effect_of_no_storage():
-    
-    reload(rp_run)    
-    
-    f = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
-    var_list = ['Fc_u*', 'Fc_Sc_u*', 'Fc_Sc_pt_u*']
-    stor_list = [False, True, True]
-    stor_var_list = ['Fc_storage_obs', 'Fc_storage_obs', 'Fc_storage']
-    ustar_list = [{'2011': 0.40,
-                   '2012': 0.39,
-                   '2013': 0.40,
-                   '2014': 0.42}, 
-                  {'2011': 0.31,
-                   '2012': 0.30,
-                   '2013': 0.32,
-                   '2014': 0.32},
-                  {'2011': 0.31,
-                   '2012': 0.30,
-                   '2013': 0.32,
-                   '2014': 0.32}]
-    
-    # Get the uncorrected data and gap-fill Fc
-    df = pd.DataFrame()
-    for i, var in enumerate(var_list):
-        
-        temp_dict = rp_run.main(use_storage = stor_list[i],
-                                storage_var = stor_var_list[i],
-                                ustar_threshold = ustar_list[i],
-                                config_file = f,
-                                do_light_response = True)[0]
-        temp_dict['NEE_est'] = temp_dict['Re'] + temp_dict['GPP']
-        temp_dict['NEE_filled'] = temp_dict['NEE_series']
-        temp_dict['NEE_filled'][np.isnan(temp_dict['NEE_filled'])] = \
-            temp_dict['NEE_est'][np.isnan(temp_dict['NEE_filled'])]
-        df[var] = temp_dict['NEE_filled']
-        if i == 0:
-            df.index = temp_dict['date_time']
- 
-    # Do calculations of means for all groups
-    diurnal_df = df.groupby([lambda x: x.hour, lambda y: y.minute]).mean()
-    diurnal_df.index = np.linspace(0, 23.5, 48)
+#def plot_NEE_diurnal_effect_of_no_storage():
+#    
+#    reload(rp_run)    
+#    
+#    f = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
+#    var_list = ['Fc_u*', 'Fc_Sc_u*', 'Fc_Sc_pt_u*']
+#    stor_list = [False, True, True]
+#    stor_var_list = ['Fc_storage_obs', 'Fc_storage_obs', 'Fc_storage']
+#    ustar_list = [{'2011': 0.40,
+#                   '2012': 0.39,
+#                   '2013': 0.40,
+#                   '2014': 0.42}, 
+#                  {'2011': 0.31,
+#                   '2012': 0.30,
+#                   '2013': 0.32,
+#                   '2014': 0.32},
+#                  {'2011': 0.31,
+#                   '2012': 0.30,
+#                   '2013': 0.32,
+#                   '2014': 0.32}]
+#    
+#    # Get the uncorrected data and gap-fill Fc
+#    df = pd.DataFrame()
+#    for i, var in enumerate(var_list):
+#        
+#        temp_dict = rp_run.main(use_storage = stor_list[i],
+#                                storage_var = stor_var_list[i],
+#                                ustar_threshold = ustar_list[i],
+#                                config_file = f,
+#                                do_light_response = True)[0]
+#        temp_dict['NEE_est'] = temp_dict['Re'] + temp_dict['GPP']
+#        temp_dict['NEE_filled'] = temp_dict['NEE_series']
+#        temp_dict['NEE_filled'][np.isnan(temp_dict['NEE_filled'])] = \
+#            temp_dict['NEE_est'][np.isnan(temp_dict['NEE_filled'])]
+#        df[var] = temp_dict['NEE_filled']
+#        if i == 0:
+#            df.index = temp_dict['date_time']
+# 
+#    # Do calculations of means for all groups
+#    diurnal_df = df.groupby([lambda x: x.hour, lambda y: y.minute]).mean()
+#    diurnal_df.index = np.linspace(0, 23.5, 48)
+#
+#    # Set plot iterables
+#    vars_dict = {1: ['Fc_Sc_pt_u*', 'Fc_Sc_u*'],
+#                 2: ['Fc_u*', 'Fc_Sc_u*']}
+#
+#    names_dict = {1: ['$(F_c\/+\/S_{c\_pt})_{u_*corr}$', '$(F_c\/+\/S_c)_{u_*corr}$'],
+#                  2: ['$F_{c\_u_*corr}$', '$(F_c\/+\/S_c)_{u_*corr}$']}
+#
+#    lines_dict = {'Fc_u*': '--',
+#                  'Fc_Sc_u*': '-',
+#                  'Fc_Sc_pt_u*': '--'}
+#
+#    # Instantiate plot
+#    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (16, 6))
+#    fig.patch.set_facecolor('white')
+#    fig_labels = ['a)', 'b)']
+#
+#    for i, ax in enumerate((ax1, ax2)):
+#
+#        counter = i + 1
+#        ax.set_xlim([0, 24])
+#        ax.set_ylim([-10, 4])
+#        ax.set_xticks([0,4,8,12,16,20,24])
+#        ax.xaxis.set_ticks_position('bottom')
+#        ax.yaxis.set_ticks_position('left')
+#        ax.spines['right'].set_visible(False)
+#        ax.spines['top'].set_visible(False)
+#        ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
+#        if counter % 2 != 0:
+#            ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
+#        x = diurnal_df.index
+#        var1 = vars_dict[counter][0]
+#        var2 = vars_dict[counter][1]
+#        y1 = diurnal_df[var1]
+#        y2 = diurnal_df[var2]
+#        ax.plot(x, y1, color = 'black', linestyle = lines_dict[var1], 
+#                linewidth = 2, label = names_dict[counter][0])
+#        ax.plot(x, y2, color = 'black', linestyle = lines_dict[var2], 
+#                linewidth = 2, label = names_dict[counter][1])
+#        ax.fill_between(x, y1, y2, where=y2>=y1, facecolor='0.8', 
+#                        edgecolor='None',interpolate=True)
+#        ax.fill_between(x, y1, y2, where=y1>=y2, facecolor='0.8', 
+#                        edgecolor='None',interpolate=True)
+#
+#        ax.legend(fontsize = 18, loc = 'lower right', frameon = False)
+#        ax.axhline(y = 0, color = 'black', linestyle = '-')
+#        ax.text(-2.6, 3.8, fig_labels[i], fontsize = 12)
+#
+#    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+#                'basic C paper/Images/diurnal_NEE_effects_of_no_correction.png',
+#                bbox_inches='tight',
+#                dpi = 300)     
+#    plt.show()
 
-    # Set plot iterables
-    vars_dict = {1: ['Fc_Sc_pt_u*', 'Fc_Sc_u*'],
-                 2: ['Fc_u*', 'Fc_Sc_u*']}
-
-    names_dict = {1: ['$(F_c\/+\/S_{c\_pt})_{u_*corr}$', '$(F_c\/+\/S_c)_{u_*corr}$'],
-                  2: ['$F_{c\_u_*corr}$', '$(F_c\/+\/S_c)_{u_*corr}$']}
-
-    lines_dict = {'Fc_u*': '--',
-                  'Fc_Sc_u*': '-',
-                  'Fc_Sc_pt_u*': '--'}
-
-    # Instantiate plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (16, 6))
-    fig.patch.set_facecolor('white')
-    fig_labels = ['a)', 'b)']
-
-    for i, ax in enumerate((ax1, ax2)):
-
-        counter = i + 1
-        ax.set_xlim([0, 24])
-        ax.set_ylim([-10, 4])
-        ax.set_xticks([0,4,8,12,16,20,24])
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.set_xlabel(r'$Time\/(hours)$', fontsize = 18)
-        if counter % 2 != 0:
-            ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
-        x = diurnal_df.index
-        var1 = vars_dict[counter][0]
-        var2 = vars_dict[counter][1]
-        y1 = diurnal_df[var1]
-        y2 = diurnal_df[var2]
-        ax.plot(x, y1, color = 'black', linestyle = lines_dict[var1], 
-                linewidth = 2, label = names_dict[counter][0])
-        ax.plot(x, y2, color = 'black', linestyle = lines_dict[var2], 
-                linewidth = 2, label = names_dict[counter][1])
-        ax.fill_between(x, y1, y2, where=y2>=y1, facecolor='0.8', 
-                        edgecolor='None',interpolate=True)
-        ax.fill_between(x, y1, y2, where=y1>=y2, facecolor='0.8', 
-                        edgecolor='None',interpolate=True)
-
-        ax.legend(fontsize = 18, loc = 'lower right', frameon = False)
-        ax.axhline(y = 0, color = 'black', linestyle = '-')
-        ax.text(-2.6, 3.8, fig_labels[i], fontsize = 12)
-
-    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-                'basic C paper/Images/diurnal_NEE_effects_of_no_correction.png',
-                bbox_inches='tight',
-                dpi = 300)     
-    plt.show()
-
-def plot_random_error():
-    
-    target = '/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo basic C paper/Data/data.csv'
-    
-    data_df = pd.read_csv(target)
-    data_df.drop('Unnamed: 0', inplace=True, axis = 1)
-    
-    NEE_lst = [var for var in data_df.columns if 'NEE' in var]
-    sigdel_lst = [var for var in data_df.columns if 'sig' in var]
-    pairs_lst = [[NEE_lst[0], sigdel_lst[0]], 
-                 [NEE_lst[1], sigdel_lst[1]], 
-                 [NEE_lst[2], sigdel_lst[2]]]
-    myorder = [0, 2, 1]
-    pairs_lst = [pairs_lst[i] for i in myorder]
-    
-    
-    day_list = []
-    night_list = []
-    
-    fig, ax1 = plt.subplots(1, 1, figsize = (12, 8))
-    fig.patch.set_facecolor('white')
-    ax1.xaxis.set_ticks_position('bottom')
-    ax1.set_ylim([0, 6])
-    ax1.yaxis.set_ticks_position('left')
-    ax1.spines['right'].set_visible(False)
-    ax1.spines['top'].set_visible(False)
-    ax1.tick_params(axis = 'y', labelsize = 14)
-    ax1.tick_params(axis = 'x', labelsize = 14)
-    ax1.set_xlabel('$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
-    ax1.set_ylabel('$\sigma[\delta]\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
-    ax2 = ax1.twinx()
-    ax2.spines['right'].set_position('zero')
-    ax2.spines['left'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
-    ax2.set_ylim(ax1.get_ylim())
-    ax2.tick_params(axis = 'y', labelsize = 14)
-    plt.setp(ax2.get_yticklabels()[0], visible = False)
-    
-    markers = ['s', '^', 'h']
-    colors = ['0.5', '0', '1']
-    labels = ['$F_c$', '$F_c\/+\/S_c$', '$F_c\/+\/S_{c\_pt}$']
-    
-    for i, pair in enumerate(pairs_lst):
-        day_params = np.polyfit(data_df.loc[:10, pair[0]], 
-                                data_df.loc[:10, pair[1]],
-                                1)
-        day_NEE_vals = np.append(data_df.loc[:9, pair[0]], 0)
-        day_sigdel_vals = np.polyval(day_params, day_NEE_vals)
-        night_params = np.polyfit(data_df.loc[10:, pair[0]], 
-                                  data_df.loc[10:, pair[1]],
-                                  1)
-        night_NEE_vals = np.append(0, data_df.loc[10:, pair[0]])
-        night_sigdel_vals = np.polyval(night_params, night_NEE_vals)
-        ax1.plot(data_df[pair[0]], data_df[pair[1]], markers[i], 
-                 markersize = 10, markerfacecolor = colors[i], label = labels[i])
-        if not i == 2:             
-            ax1.plot(day_NEE_vals, day_sigdel_vals, color = colors[i])
-            ax1.plot(night_NEE_vals, night_sigdel_vals, color = colors[i])
-    ax1.legend(loc = 'upper left', numpoints = 1, frameon = False, fontsize = 18)
-
-    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-                'basic C paper/Images/random_error.png',
-                bbox_inches='tight',
-                dpi = 300) 
-
-    return    
+#def plot_random_error():
+#    
+#    target = '/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo basic C paper/Data/data.csv'
+#    
+#    data_df = pd.read_csv(target)
+#    data_df.drop('Unnamed: 0', inplace=True, axis = 1)
+#    
+#    NEE_lst = [var for var in data_df.columns if 'NEE' in var]
+#    sigdel_lst = [var for var in data_df.columns if 'sig' in var]
+#    pairs_lst = [[NEE_lst[0], sigdel_lst[0]], 
+#                 [NEE_lst[1], sigdel_lst[1]], 
+#                 [NEE_lst[2], sigdel_lst[2]]]
+#    myorder = [0, 2, 1]
+#    pairs_lst = [pairs_lst[i] for i in myorder]
+#    
+#    
+#    day_list = []
+#    night_list = []
+#    
+#    fig, ax1 = plt.subplots(1, 1, figsize = (12, 8))
+#    fig.patch.set_facecolor('white')
+#    ax1.xaxis.set_ticks_position('bottom')
+#    ax1.set_ylim([0, 6])
+#    ax1.yaxis.set_ticks_position('left')
+#    ax1.spines['right'].set_visible(False)
+#    ax1.spines['top'].set_visible(False)
+#    ax1.tick_params(axis = 'y', labelsize = 14)
+#    ax1.tick_params(axis = 'x', labelsize = 14)
+#
+#    ax1.set_ylabel('$\sigma[\delta]\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
+#    ax2 = ax1.twinx()
+#    ax2.spines['right'].set_position('zero')
+#    ax2.spines['left'].set_visible(False)
+#    ax2.spines['top'].set_visible(False)
+#    ax2.set_ylim(ax1.get_ylim())
+#    ax2.tick_params(axis = 'y', labelsize = 14)
+#    plt.setp(ax2.get_yticklabels()[0], visible = False)
+#    
+#    markers = ['s', '^', 'h']
+#    colors = ['0.5', '0', '1']
+#    labels = ['$F_c$', '$F_c\/+\/S_c$', '$F_c\/+\/S_{c\_pt}$']
+#    
+#    for i, pair in enumerate(pairs_lst):
+#        day_params = np.polyfit(data_df.loc[:10, pair[0]], 
+#                                data_df.loc[:10, pair[1]],
+#                                1)
+#        day_NEE_vals = np.append(data_df.loc[:9, pair[0]], 0)
+#        day_sigdel_vals = np.polyval(day_params, day_NEE_vals)
+#        night_params = np.polyfit(data_df.loc[10:, pair[0]], 
+#                                  data_df.loc[10:, pair[1]],
+#                                  1)
+#        night_NEE_vals = np.append(0, data_df.loc[10:, pair[0]])
+#        night_sigdel_vals = np.polyval(night_params, night_NEE_vals)
+#        ax1.plot(data_df[pair[0]], data_df[pair[1]], markers[i], 
+#                 markersize = 10, markerfacecolor = colors[i], label = labels[i])
+#        if not i == 2:             
+#            ax1.plot(day_NEE_vals, day_sigdel_vals, color = colors[i])
+#            ax1.plot(night_NEE_vals, night_sigdel_vals, color = colors[i])
+#    ax1.legend(loc = 'upper left', numpoints = 1, frameon = False, fontsize = 18)
+#
+#    fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+#                'basic C paper/Images/random_error.png',
+#                bbox_inches='tight',
+#                dpi = 300) 
+#
+#    return    
     
 def plot_RUE_dependence_on_Sc():
     
@@ -1250,7 +1250,8 @@ def calc_annual_sum(use_storage, ustar_threshold, do_light_response):
     reload(rp_run)
     rslt_dict = rp_run.main(use_storage = use_storage,
                             ustar_threshold = ustar_threshold,
-                            do_light_response = do_light_response)[0]    
+                            do_light_response = do_light_response,
+                            ustar_filter_day = False)[0]    
     
     # Generate model estimates
     rslt_dict['NEE_mod'] = rslt_dict['Re'] + rslt_dict['GPP']
