@@ -21,15 +21,17 @@ file_in = '/home/imchugh/Ozflux/Sites/Whroo/Data/Processed/all/Whroo_2011_to_201
 
 df = io.OzFluxQCnc_to_data_structure(file_in, output_structure = 'pandas')
 
+df['SRT'] = (df.Flu / (5.67*10**-8))**(1.0/4)-273.15
+
 ta_vars = [var for var in df.columns if 'Ta' in var]
 ts_vars = [var for var in df.columns if 'Ts' in var]
 
-lst = ['Ta_HMP_2m', 'Ta_HMP_4m', 'Ta_HMP_8m', 'Ta_HMP_16m', 
-       'Ta_HMP_32m', 'ustar', 'Ts', 'Fsd', 'Flu']
+lst = ['Ta_HMP_1m', 'Ta_HMP_2m', 'Ta_HMP_4m', 'Ta_HMP_8m', 'Ta_HMP_16m', 
+       'Ta_HMP_32m', 'ustar', 'Fsd']
 
 sub_df = df.loc[:'2014-06-30', lst]
                                 
-num_cats = 30   
+num_cats = 20   
 
 # Remove daytime, missing or filled data where relevant
 sub_df = sub_df[sub_df.Fsd < 5]
@@ -43,31 +45,41 @@ new_df = sub_df.groupby('ustar_cat').mean()
 fig, ax = plt.subplots(1, 1, figsize = (12, 8))
 fig.patch.set_facecolor('white')
 
-new_df.Flu = (new_df.Flu / (5.67*10**-8))**(1.0/4)-273.15
+#new_df.Flu = (new_df.Flu / (5.67*10**-8))**(1.0/4)-273.15
 
 plot_list = [i for i in lst if not i in ['Fsd', 'ustar']]
 
-adj = 1.5
+adj = 5.5
 
 weight_df = pd.DataFrame(index=new_df.index)
 weight_df['0-2'] = new_df.Ta_HMP_2m * 2
 weight_df['2-4'] = (new_df.Ta_HMP_2m + new_df.Ta_HMP_4m) / 2 * 2
 weight_df['4-8'] = (new_df.Ta_HMP_4m + new_df.Ta_HMP_8m) / 2 * 4
 weight_df['8-16'] = (new_df.Ta_HMP_8m + new_df.Ta_HMP_16m) / 2 * 8
-#weight_df['16-36'] = (new_df.Ta_HMP_16m + new_df.Ta_HMP_32m) / 2 * 20
-weight_df['all'] = weight_df.sum(axis = 1) / 16
+weight_df['16-36'] = (new_df.Ta_HMP_16m + new_df.Ta_HMP_32m) / 2 * 20
+weight_df['all'] = weight_df.sum(axis = 1) / 36
+
+
 
 new_df['Ta_weighted'] = weight_df['all']
 plot_list.append('Ta_weighted')
-plot_list.append('Ts')
+#plot_list.append('Ts')
 
 for var in plot_list:
-    if var == 'Flu':
+    if var == 'Ta_HMP_1m':
         new_df[var] = new_df[var] + adj
     ax.plot(new_df.ustar, new_df[var], label = var)
 
-ax.plot(new_df.ustar, new_df.Flu, label = 'Flu')
+#ax.plot(new_df.ustar, new_df.Flu, label = 'Flu')
 
 plt.legend(loc='lower right')
 plt.show()
+
+#daily_df = df.loc[:'2014-06-30', lst].groupby([lambda x: x.hour, lambda y: y.minute]).mean()
+#fig, ax = plt.subplots(1, 1, figsize = (12, 8))
+#fig.patch.set_facecolor('white')
+#for var in plot_list:
+#    ax.plot(daily_df[var], label = var)
+#plt.legend()
+#plt.show()
 
