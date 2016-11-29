@@ -49,18 +49,24 @@ class NLS:
         self.df = self.nobs - self.nparm
         self.MSE = self.RSS / self.df
         self.RMSE = np.sqrt( self.MSE )
- 
+
         # Get the covariance matrix
-        self.cov = self.MSE * self.mod1[1]
+        try:
+            self.cov = self.MSE * self.mod1[1]
+            raise_flag = False
+        except:
+            raise_flag = True
  
-        # Get parameter standard errors
-        self.parmSE = np.diag( np.sqrt( self.cov ) )
- 
-        # Calculate the t-values
-        self.tvals = self.parmEsts/self.parmSE
- 
-        # Get p-values
-        self.pvals = (1 - spst.t.cdf( np.abs(self.tvals), self.df))*2
+        if not raise_flag:
+            
+            # Get parameter standard errors
+            self.parmSE = np.diag( np.sqrt( self.cov ) )
+     
+            # Calculate the t-values
+            self.tvals = self.parmEsts/self.parmSE
+     
+            # Get p-values
+            self.pvals = (1 - spst.t.cdf( np.abs(self.tvals), self.df))*2
  
         # Get biased variance (MLE) and calculate log-likehood
         self.s2b = self.RSS / self.nobs
