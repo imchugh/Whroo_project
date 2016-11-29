@@ -21,7 +21,7 @@ def filter_data(this_dict):
     
     date_time = this_dict.pop('date_time')
     
-    nan_bool_arr = (this_dict['Fsd'] < 5) & (this_dict['ustar'] > 0.41)
+    nan_bool_arr = (this_dict['Fsd'] < 5) & (this_dict['ustar'] > 0.32)
     for var in this_dict.keys():
         nan_bool_arr = nan_bool_arr & ~np.isnan(this_dict[var])
             
@@ -128,33 +128,33 @@ rand_configs_dict = {'measurement_interval': 30,
 # Get data
 data_dict = io.OzFluxQCnc_to_data_structure(file_path)
 
-# Get model and add mode4l NEE to data dict
-model_dict = rpr.main(do_light_response = True)[0]
-data_dict['NEE_model'] = model_dict['GPP'] + model_dict['Re']
-
-# Add storage if using it
-if do_storage:
-    data_dict['NEE_series'] = data_dict['Fc'] + data_dict['Fc_storage_obs']
-else:
-    data_dict['NEE_series'] = data_dict['Fc']
-
-# Specify variable to use for temperature
-if air_T_var == 'Flu':
-    data_dict['TempC'] = (data_dict['Flu'] / (5.67*10**-8))**(1.0/4)-273.15
-else:
-    data_dict['TempC'] = data_dict[air_T_var]
-
-data_dict['ws'] = data_dict.pop('Ws')
-
-# Truncate dataset to necessary variables
-if do_storage:
-    data_dict['NEE_series'] = data_dict['Fc'] + data_dict['Fc_storage_obs']
-else:
-    data_dict['NEE_series'] = data_dict['Fc']
-#data_dict = {var: data_dict[var] for var in ['date_time', 'NEE_series', 'Fsd', 
-#                                             'Ta', 'Ts', 'Sws', 'ustar']}
-
-test = rand_err.regress_sigma_delta(data_dict, rand_configs_dict)                                             
+## Get model and add mode4l NEE to data dict
+#model_dict = rpr.main(do_light_response = True)[0]
+#data_dict['NEE_model'] = model_dict['GPP'] + model_dict['Re']
+#
+## Add storage if using it
+#if do_storage:
+#    data_dict['NEE_series'] = data_dict['Fc'] + data_dict['Fc_storage_obs']
+#else:
+#    data_dict['NEE_series'] = data_dict['Fc']
+#
+## Specify variable to use for temperature
+#if air_T_var == 'Flu':
+#    data_dict['TempC'] = (data_dict['Flu'] / (5.67*10**-8))**(1.0/4)-273.15
+#else:
+#    data_dict['TempC'] = data_dict[air_T_var]
+#
+#data_dict['ws'] = data_dict.pop('Ws')
+#
+## Truncate dataset to necessary variables
+#if do_storage:
+#    data_dict['NEE_series'] = data_dict['Fc'] + data_dict['Fc_storage_obs']
+#else:
+#    data_dict['NEE_series'] = data_dict['Fc']
+##data_dict = {var: data_dict[var] for var in ['date_time', 'NEE_series', 'Fsd', 
+##                                             'Ta', 'Ts', 'Sws', 'ustar']}
+#
+#test = rand_err.regress_sigma_delta(data_dict, rand_configs_dict)                                             
                                              
 solar_dict = sf.get_ephem_solar(data_dict, lat = latitude, lon = longitude, 
                                 alt = altitude, GMT_zone = GMT_zone, 
