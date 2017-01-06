@@ -9,13 +9,14 @@ import numpy as np
 import copy as cp
 import pdb
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
 
 import DataIO as io
 from AIC_class_test import NLS
 import solar_functions as sf
 import respiration as re_LT
-import respiration_new as re_LT_H2O
-import respiration_new_2 as re_nl_H2O
+import respiration_H2O as re_LT_H2O
+import respiration_nonlin_H2O as re_nl_H2O
 import respiration_lin_H2O as re_lin_H2O
 import data_filtering as filt
 import data_formatting as dt_fm
@@ -271,24 +272,24 @@ nan_bool = filter_data(sub_dict)
 ###############################################################################
 # Do step trials with differing number of days
 
-#temp_configs_dict = cp.deepcopy(re_configs_dict)
-#step_rslt_dict = {'n_params': {}, 'AIC': {}}
+temp_configs_dict = cp.deepcopy(re_configs_dict)
+step_rslt_dict = {'n_params': {}, 'AIC': {}}
 n_obs = len(nan_bool[nan_bool])
-#for window in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30, 60, 120, 360]:
-#    
-#    temp_configs_dict['options']['step_size_days'] = window
-#    temp_configs_dict['options']['window_size_days'] = window
-#    
-#    this_rslt_dict, this_params_dict = re_LT_H2O.main(data_dict, 
-#                                                      temp_configs_dict['options'])[:2]
-#    
-#    steps = len(this_params_dict['rb_error_code'][this_params_dict['rb_error_code'] != 20])
-#    n_params = 9 + steps
-#    rss_step_model = RSS(data_dict['NEE_series'][nan_bool], 
-#                         this_rslt_dict['Re'][nan_bool])
-#    AIC_step_model = AIC(n_obs, n_params, rss_step_model)
-#    step_rslt_dict['n_params'][window] = n_params
-#    step_rslt_dict['AIC'][window] = AIC_step_model
+for window in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30, 60, 120, 360]:
+    
+    temp_configs_dict['options']['step_size_days'] = window
+    temp_configs_dict['options']['window_size_days'] = window
+    
+    this_rslt_dict, this_params_dict = re_LT_H2O.main(data_dict, 
+                                                      temp_configs_dict['options'])[:2]
+    
+    steps = len(this_params_dict['rb_error_code'][this_params_dict['rb_error_code'] != 20])
+    n_params = 9 + steps
+    rss_step_model = RSS(data_dict['NEE_series'][nan_bool], 
+                         this_rslt_dict['Re'][nan_bool])
+    AIC_step_model = AIC(n_obs, n_params, rss_step_model)
+    step_rslt_dict['n_params'][window] = n_params
+    step_rslt_dict['AIC'][window] = AIC_step_model
 
 ###############################################################################
 # Do step model trials for different respiration models
@@ -296,7 +297,7 @@ n_obs = len(nan_bool[nan_bool])
 # Set some stuff up
 step_init_list = [7, 365]
 name_prefix_list = ['step', 'annual']
-stat_rslt_dict = {'AIC': {}, 'RMSE': {}}
+stat_rslt_dict = {'AIC': {}, 'RMSE': {}, 'r2': {}}
 
 # Do 7 day
 temp_configs_dict = cp.deepcopy(re_configs_dict) 
@@ -314,8 +315,11 @@ for i, step in enumerate(step_init_list):
                              this_rslt_dict['Re'][nan_bool])
         rmse_step_model = np.sqrt(rss_step_model / len(nan_bool[nan_bool]))
         AIC_step_model = AIC(n_obs, n_params, rss_step_model)
+        r2_step_model = linregress(data_dict['NEE_series'][nan_bool], 
+                                   this_rslt_dict['Re'][nan_bool])[2]**2
         stat_rslt_dict['RMSE'][model_name] = rmse_step_model
         stat_rslt_dict['AIC'][model_name] = AIC_step_model
+        stat_rslt_dict['r2'][model_name] = r2_step_model
 
 ###############################################################################
 # Do global fits
@@ -406,76 +410,3 @@ var_arr = var_arr[sort_index]
 delta_arr = AIC_arr - AIC_arr.min()
 weights_sum = np.exp(-delta_arr / 2).sum()
 weights_arr = np.exp(-delta_arr / 2) / weights_sum
-
-
-#var_arr = np.array([])
-#AIC_arr = np.array([])
-#for mod in model_dict.keys():
-#    var_arr = np.append(var_arr, mod)
-#    AIC_arr = np.append(AIC_arr, model_dict[mod].AIC())
-#    
-#    
-#sort_index = np.argsort(AIC_arr)
-#AIC_arr = AIC_arr[sort_index]
-#var_arr = var_arr[sort_index]
-#delta_arr = AIC_arr - AIC_arr.min()
-#weights_sum = np.exp(-delta_arr / 2).sum()
-#weights_arr = np.exp(-delta_arr / 2) / weights_sum
-#
-#    
-#
-#    
-#    
-##    print 'AIC for model {0} = {1}'.format(mod, str(round(model_dict[mod].AIC())))
-##    print 'RMSE for model {0} = {1}'.format(mod, str(round(model_dict[mod].RMSE, 3)))
-#
-### Do prediction for LT without soil moisture
-##params_dict = {var: p0[i] for i, var in enumerate(['rb', 'Eo'])}
-##LT_noH2O_mod = NLS(L_T_noH2O, params_dict, x, y)
-##noH2O_pred = L_T_noH2O_eval(x, LT_noH2O_mod.parmEsts)
-#
-##all_recs_years_arr = np.array([date.year for date in data_dict['date_time']])
-##years_list = list(set(all_recs_years_arr))
-#
-### Iterate through the years
-##model_dict = {}
-##for year in years_list:
-##    
-##    # Create a new dictionary containing only the nocturnal data for the relevant year
-##    year_index = np.where(all_recs_years_arr == year)
-##    year_dict = {var: data_dict[var][year_index] for var in data_dict.keys()}
-##
-##    # Create a month array and list for indexing and selecting the correct month
-##    all_recs_months_arr = np.array([date.month for date in year_dict['date_time']])
-##    months_list = list(set(all_recs_months_arr))
-##
-##    # Create a results_array
-##    results_array = np.empty(12)
-##    results_array[:] = np.nan
-##    model_dict[year] = {}
-##
-##    # Iterate through the months
-##    for month in months_list:
-##
-##        print 'Year is {0} and month is {1}'.format(str(year), str(month))
-##        
-##        # Create a month dict
-##        month_index = np.where(all_recs_months_arr == month) 
-##        month_dict = {var: year_dict[var][month_index] for var in year_dict.keys()}
-##        nan_bool = filter_data(month_dict)
-##        
-##        # Only process if enough data
-##        total_data = len(nan_bool)
-##        valid_data = len(nan_bool[nan_bool])
-##        if valid_data > 0:
-##        
-##            # Do the fitting and write to results dictionary
-##            x = np.empty([len(month_dict['NEE_series']), 2])
-##            x[:, 0] = month_dict['Ta']
-##            x[:, 1] = month_dict['Sws']
-##            y = month_dict['NEE_series']
-##            try:
-##                LT_mod = NLS(L_T, params_dict, x, y)
-##            except:
-##                LT_mod = None
-##            model_dict[year][month] = LT_mod

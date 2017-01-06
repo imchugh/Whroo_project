@@ -17,7 +17,7 @@ from scipy.stats import linregress
 import DataIO as io
 import data_formatting as dt_fm
 import data_filtering as filt
-import respiration_new as re
+import respiration_H2O as re
 import photosynthesis as ps
 import random_error as rand_err
 
@@ -47,7 +47,7 @@ def get_data(configs_dict, use_storage = True):
 
 def plot_rb(data_dict):
 
-    fig, ax = plt.subplots(1, figsize = (12, 8))
+    fig, ax = plt.subplots(1, figsize = (16, 6))
     fig.patch.set_facecolor('white')
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
@@ -56,11 +56,10 @@ def plot_rb(data_dict):
     ax.tick_params(axis = 'x', labelsize = 14)
     ax.tick_params(axis = 'y', labelsize = 14)
     #ax.set_xlabel('$Date$', fontsize = 18)
-    ax.set_ylabel(r'$rb\/(\mu mol C\/m^{-2}\/s^{-1})$', fontsize = 18)
+    ax.set_ylabel(r'$R_{10}\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
     ax.set_xlim([dt.date(2012, 1, 1), dt.date(2015, 1, 1)])
     min_y = 0
-    max_y = math.ceil((data_dict['rb'] + 
-                       data_dict['rb_SD']).max())
+    max_y = math.ceil((data_dict['rb'] + data_dict['rb_SD'] * 2).max())
     ax.set_ylim([0, max_y])
     
     tick_locs = [i for i in data_dict['date'] if 
@@ -80,8 +79,20 @@ def plot_rb(data_dict):
     for line in vert_lines:
         ax.axvline(line, color = 'black', ls = ':')             
     
+    # Define coordinates for missing data
+    start_index = np.where(data_dict['date'] == dt.date(2013, 8, 30))
+    end_index = np.where(data_dict['date'] == dt.date(2013, 10, 25))
+    lo_val = np.array([data_dict['rb'][start_index] - 
+                        data_dict['rb_SD'][start_index] * 2,
+                        data_dict['rb'][end_index] - 
+                        data_dict['rb_SD'][end_index] * 2]).min()
+    hi_val = np.array([data_dict['rb'][start_index] + 
+                       data_dict['rb_SD'][start_index] * 2,
+                       data_dict['rb'][end_index] + 
+                       data_dict['rb_SD'][end_index] * 2]).max()    
+    
     # Box to demarcate missing data
-    ax.axhspan(0.6, 2.6, 0.553, 0.603, edgecolor = 'black', ls = '--', fill = False)
+    ax.axhspan(lo_val, hi_val, 0.553, 0.603, edgecolor = 'black', ls = '--', fill = False)
     ax.annotate('Missing\ndata', 
                 xy = (dt.datetime(2013, 9, 23), 2.6), 
                 xytext = (dt.datetime(2013, 9, 23), 3.2),
@@ -108,11 +119,14 @@ def plot_noise(data_dict, synth_dict):
     num_cats = 30
     
     df = pd.DataFrame(data_dict)
-    df['NEE_synth'] = synth_dict['NEE_series']
+    df['NEE_synth'] = synth_dict['NEE_model'] + synth_dict['error']
+    df['NEE_synth_1.5'] = synth_dict['NEE_model'] + synth_dict['error'] / 1.5
+    df['NEE_synth_2'] = synth_dict['NEE_model'] + synth_dict['error'] / 2
     df['NEE_model'] = synth_dict['NEE_model']
     df = df[df.Fsd < 5]
     df = df[df.ustar > 0.32]
-    df = df[['TempC', 'NEE_series', 'NEE_synth', 'NEE_model', 'Sws']]
+    df = df[['TempC', 'NEE_series', 'NEE_synth', 'NEE_model', 'Sws', 
+             'NEE_synth_1.5', 'NEE_synth_2']]
     df.dropna(inplace=True)
     
     # Put into temperature categories
@@ -122,12 +136,29 @@ def plot_noise(data_dict, synth_dict):
     
     # Do grouping
     mean_df = df.groupby('TempC_cat').mean()
+#    mean_df.iloc[28]['NEE_series'] = mean_df.iloc[28]['NEE_series'] * 1.1
     std_df = df.groupby('TempC_cat').std()
     
     # Calculate stats
-    r2_mod_modnoise = np.round(linregress(df.NEE_model, df.NEE_synth).rvalue ** 2, 2)
-    r2_mod_obs = np.round(linregress(df.NEE_model, df.NEE_series).rvalue ** 2, 2)
+    rsq_vals = []
+    txt_name = '$r^2\/Mod:\/Obs'
+    stat = np.round(linregress(df.NEE_model, df.NEE_series).rvalue ** 2, 2)
+    rsq_vals.append(txt_name + '\/=\/' + str(stat) + '$\n            ')
     
+    
+    for factor in [1, 1.5, 2]:
+        if factor == 1:
+            var_name = 'NEE_synth' 
+            txt_name = '$Mod+Noise'
+        else:
+            var_name = 'NEE_synth_' + str(factor)
+            txt_name = '$Mod+Noise\//\/{0}'.format(str(factor))
+        stat = np.round(linregress(df.NEE_model, df[var_name]).rvalue ** 2, 2)
+        if not factor == 2:
+            rsq_vals.append(txt_name + '\/=\/' + str(stat) + '$\n            ')
+        else:
+            rsq_vals.append(txt_name + '\/=\/' + str(stat) + '$')
+
     # Now plot
     fig, ax = plt.subplots(1, figsize = (12, 8))
     fig.patch.set_facecolor('white')
@@ -139,7 +170,7 @@ def plot_noise(data_dict, synth_dict):
     ax.tick_params(axis = 'x', labelsize = 14)
     ax.tick_params(axis = 'y', labelsize = 14)
     ax.set_xlabel('$Air\/temperature\/(^oC)$', fontsize = 18)
-    ax.set_ylabel(r'$NEE\/(\mu mol C\/m^{-2}\/s^{-1})$', fontsize = 18)
+    ax.set_ylabel(r'$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
     ax.axhline(0, color = 'black')
     
     color_real = 'blue'
@@ -149,20 +180,21 @@ def plot_noise(data_dict, synth_dict):
     ax.plot(df['TempC'], df['NEE_synth'], 
             'o', ms = 3, alpha = 0.2, mfc = 'None', mec = color_synth, label = '')    
     ax.plot(mean_df['TempC'], mean_df['NEE_series'], color = color_real, lw = 3,
-            label = '$observations\/(r^2\/=\/{0})$'.format(str(r2_mod_obs)))
+            label = '$observations$')
     ax.plot(mean_df['TempC'], mean_df['NEE_series'] + std_df['NEE_series'], 
             ls = ':', lw = 3, color = color_real, label = '')
     ax.plot(mean_df['TempC'], mean_df['NEE_series'] - std_df['NEE_series'], 
             ls = ':', lw = 3, color = color_real, label = '')
-    ax.plot(mean_df['TempC'], mean_df['NEE_synth'], color = color_synth, lw = 3,
-            label = '$model\/+\/noise\/(r^2\/=\/{0})$'.format(str(r2_mod_modnoise)))
-    ax.plot(mean_df['TempC'], mean_df['NEE_synth'] + std_df['NEE_synth'], 
+    ax.plot(mean_df['TempC'], mean_df['NEE_model'], color = color_synth, lw = 3,
+            label = '$model\/+\/noise$')
+    ax.plot(mean_df['TempC'], mean_df['NEE_model'] + std_df['NEE_synth'], 
             ls = ':', lw = 3, color = color_synth, label = '')
-    ax.plot(mean_df['TempC'], mean_df['NEE_synth'] - std_df['NEE_synth'], 
+    ax.plot(mean_df['TempC'], mean_df['NEE_model'] - std_df['NEE_synth'], 
             ls = ':', lw = 3, color = color_synth, label = '')
-    ax.legend(loc = [0.6, 0.1], frameon = False, fontsize = 18)
-    
-    return
+    ax.legend(loc = [0.73, 0.87], frameon = False, fontsize = 18)
+    string = ('').join(rsq_vals)
+    bbox = dict(facecolor='none', edgecolor='grey', boxstyle='round,pad=0.5')    
+    ax.text(26, -3, string, fontsize = 15, verticalalignment = 'center', bbox = bbox)
 
 ###############################################################################
 # Constants
@@ -242,13 +274,19 @@ Eo_dict = {this_var: dummy_arr.copy() for this_var in ['Eo_sum', 'Eo_sum_sq']}
 ###############################################################################
 # Do MC simulation
 
+print ('Running trial: '), 
+
+test = []
+
 for this_trial in xrange(num_trials):
 
+    print this_trial, 
+    
     synth_dict = cp.deepcopy(re_data_dict)
-    synth_dict['error'] = rand_err.estimate_random_error(sigma_delta)
-    this_bool = np.isnan(re_data_dict['NEE_series'])
     synth_dict['NEE_model'] = rand_data_dict['NEE_model']
+    synth_dict['error'] = rand_err.estimate_random_error(sigma_delta)
     synth_dict['NEE_series'] = synth_dict['NEE_model'] + synth_dict['error']
+    this_bool = np.isnan(re_data_dict['NEE_series'])
     synth_dict['NEE_series'][this_bool] = np.nan
     re_synth_rslt_dict, re_synth_params_dict, re_synth_error_dict = (
         re.main(synth_dict, re_configs_dict['options']))
@@ -267,7 +305,7 @@ for this_trial in xrange(num_trials):
 
     rb_dict['rb_sum'] = rb_dict['rb_sum'] + re_synth_params_dict['rb']
     rb_dict['rb_sum_sq'] = rb_dict['rb_sum_sq'] + re_synth_params_dict['rb']**2
-    
+    test.append(re_synth_params_dict['rb'][0])
 
 re_synth_params_dict['rb_SD'] = np.sqrt((rb_dict['rb_sum_sq'] - 
                                          (rb_dict['rb_sum'])**2 / num_trials) /
@@ -280,5 +318,7 @@ re_synth_params_dict['Eo_SD'] = np.sqrt((Eo_dict['Eo_sum_sq'] -
 # Do plotting
 
 plot_noise(re_data_dict, synth_dict)
+plot_rb(re_synth_params_dict)
+
 
 

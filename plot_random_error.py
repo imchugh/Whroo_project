@@ -19,7 +19,7 @@ sigdel_lst = [var for var in data_df.columns if 'sig' in var]
 pairs_lst = [[NEE_lst[0], sigdel_lst[0]], 
              [NEE_lst[1], sigdel_lst[1]], 
              [NEE_lst[2], sigdel_lst[2]]]
-myorder = [0, 2, 1]
+myorder = [2, 0, 1]
 pairs_lst = [pairs_lst[i] for i in myorder]
 
 
@@ -36,6 +36,7 @@ ax1.spines['top'].set_visible(False)
 ax1.tick_params(axis = 'y', labelsize = 14)
 ax1.tick_params(axis = 'x', labelsize = 14)
 
+ax1.set_xlabel('$NEE\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
 ax1.set_ylabel('$\sigma[\delta]\/(\mu mol\/CO_2\/m^{-2}\/s^{-1})$', fontsize = 18)
 ax2 = ax1.twinx()
 ax2.spines['right'].set_position('zero')
