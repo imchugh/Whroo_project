@@ -41,7 +41,7 @@ def get_data(configs_dict, use_storage = True):
 
 ###############################################################################
 num_cats = 30
-config_file = '/home/imchugh/Code/Python/Config_files/Whroo_master_configs.txt'
+config_file = '/home/Ian/Code/Python/Config_files/Whroo_master_configs.txt'
 
 # Do respiration
 
@@ -138,8 +138,8 @@ ax1.spines['right'].set_visible(False)
 ax1.spines['top'].set_visible(False)
 plt.setp(ax1.get_yticklabels()[0], visible = False)
 ax1.legend(fontsize = 18, loc = [0.76,0.4], numpoints = 1, frameon = False)
-fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
-            'basic C paper/Images/ustar_vs_Fc_and_storage_advection_day.png',
-            bbox_inches='tight',
-            dpi = 300) 
+#fig.savefig('/media/Data/Dropbox/Work/Manuscripts in progress/Writing/Whroo ' \
+#            'basic C paper/Images/ustar_vs_Fc_and_storage_advection_day.png',
+#            bbox_inches='tight',
+#            dpi = 300) 
 plt.show()

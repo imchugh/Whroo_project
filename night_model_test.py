@@ -51,11 +51,10 @@ def filter_data(this_dict):
     date_time = this_dict.pop('date_time')
     
     nan_bool_arr = this_dict['Fsd'] < 5
-    try:
-        for var in this_dict.keys():
-            nan_bool_arr = nan_bool_arr & ~np.isnan(this_dict[var])
-    except:
-        pdb.set_trace()
+
+    for var in this_dict.keys():
+        nan_bool_arr = nan_bool_arr & ~np.isnan(this_dict[var])
+
     for var in this_dict.keys():
         this_dict[var] = this_dict[var][nan_bool_arr]
     
